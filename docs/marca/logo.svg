@@ -1,0 +1,7 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120" viewBox="0 0 320 120" role="img" aria-label="Logo da cartilha de achados e perdidos">
+  <rect width="320" height="120" fill="#0f172a"/>
+  <circle cx="58" cy="60" r="36" fill="#f59e0b"/>
+  <path d="M36 60h44M58 38v44M46 46l24 28M70 46L46 74" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  <text x="110" y="55" font-family="Arial, sans-serif" font-size="26" fill="#f8fafc" font-weight="700">Cadê</text>
+  <text x="110" y="83" font-family="Arial, sans-serif" font-size="16" fill="#cbd5e1">achados &amp; perdidos</text>
+</svg>
