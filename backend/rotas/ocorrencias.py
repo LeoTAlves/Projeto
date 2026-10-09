@@ -1,28 +1,26 @@
-﻿from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from banco import obter_sessao
 from esquemas.ocorrencia import OcorrenciaCriar, OcorrenciaSaida
-from servicos.aviso import buscar_aviso, registrar_ocorrencia
-from servicos.ocorrencia import listar_ocorrencias_do_aviso
+from servicos.ocorrencia import listar_ocorrencias_do_aviso, registrar_ocorrencia
 
-# As rotas de ocorrência cuidam do registro e da leitura do histórico do aviso selecionado.
+# As ocorrências continuam subordinadas ao aviso nos caminhos utilizados pelo front.
 router = APIRouter(prefix="/avisos", tags=["ocorrencias"])
 
-# Busca todas as ocorrências do aviso para a tela de detalhe ou da pessoa.
+
+# Distingue o aviso inexistente de um aviso que existe e ainda não possui ocorrências.
 @router.get("/{aviso_id}/ocorrencias", response_model=list[OcorrenciaSaida], status_code=status.HTTP_200_OK)
-def listar_ocorrencias_rotas(aviso_id: int):
-    aviso = buscar_aviso(aviso_id)
-    if aviso is None:
+def listar_ocorrencias_rotas(aviso_id: int, sessao=Depends(obter_sessao)):
+    ocorrencias = listar_ocorrencias_do_aviso(sessao, aviso_id)
+    if ocorrencias is None:
         raise HTTPException(status_code=404, detail="Aviso não encontrado.")
-    return listar_ocorrencias_do_aviso(aviso_id)
+    return ocorrencias
 
-# Registra uma ocorrência e aplica a regra de negócio do status do aviso.
+
+# A aula 6 mantém a recusa como texto; a rota escolhe o status com if, sem exceção própria.
 @router.post("/{aviso_id}/ocorrencias", response_model=OcorrenciaSaida, status_code=status.HTTP_201_CREATED)
-def criar_ocorrencia_rotas(aviso_id: int, dados: OcorrenciaCriar):
-    aviso = buscar_aviso(aviso_id)
-    if aviso is None:
-        raise HTTPException(status_code=404, detail="Aviso não encontrado.")
-
-    resultado = registrar_ocorrencia(aviso_id, dados.model_dump())
+def criar_ocorrencia_rotas(aviso_id: int, dados: OcorrenciaCriar, sessao=Depends(obter_sessao)):
+    resultado = registrar_ocorrencia(sessao, aviso_id, dados.model_dump())
     if resultado is None:
         raise HTTPException(status_code=404, detail="Aviso não encontrado.")
     if isinstance(resultado, str):

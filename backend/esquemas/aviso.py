@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Literal
 from pydantic import BaseModel, Field
 
@@ -7,7 +8,7 @@ from esquemas.ocorrencia import OcorrenciaSaida
 class AvisoCriar(BaseModel):
     descricao: str = Field(..., min_length=3, max_length=200)
     pavilhao: Literal["Pavilhao 1", "Pavilhao 2", "Pavilhao 3"]
-    noite: str = Field(..., min_length=4, max_length=20)
+    noite: date  # Valida uma data real, mantendo AAAA-MM-DD no JSON.
     visitante_id: int = Field(..., ge=1)
 
 # O schema de saída traz os dados principais do aviso e o estado atual da busca.
@@ -15,7 +16,7 @@ class AvisoSaida(BaseModel):
     id: int
     descricao: str
     pavilhao: str
-    noite: str
+    noite: date
     visitante_id: int
     situacao: Literal["procurando", "aguardando retirada", "devolvido"]
 

@@ -1,8 +1,10 @@
 ﻿import { useEffect, useState } from 'react';
 import { criarOcorrencia, listarAvisos } from '../../../servicos/api';
+import Paginacao from '../../../componentes/Paginacao';
 
 // A tela de ocorrência registra um achado ou uma devolução em um aviso específico da equipe.
 function Ocorrencia() {
+  const [pagina, setPagina] = useState(1);
   const [avisoId, setAvisoId] = useState('');
   const [tipo, setTipo] = useState('objeto achado');
   const [descricao, setDescricao] = useState('');
@@ -14,18 +16,23 @@ function Ocorrencia() {
 
   // O formulário precisa dos avisos existentes para permitir escolher o registro correto.
   useEffect(() => {
-    listarAvisos()
+    setCarregando(true);
+    setAvisoId('');
+    setErro(false);
+    setMensagem('');
+    listarAvisos({ pagina })
       .then((resultado) => {
         setAvisos(resultado);
         const avisoAberto = resultado.find((aviso) => aviso.situacao !== 'devolvido');
-        if (avisoAberto) setAvisoId(String(avisoAberto.id));
+        const primeiroAviso = avisoAberto || resultado[0];
+        if (primeiroAviso) setAvisoId(String(primeiroAviso.id));
       })
       .catch((falha) => {
         setErro(true);
         setMensagem(falha.message);
       })
       .finally(() => setCarregando(false));
-  }, []);
+  }, [pagina]);
 
   // O envio registra a ocorrência e recarrega a lista para exibir a situação atualizada.
   const enviarOcorrencia = (evento) => {
@@ -41,7 +48,7 @@ function Ocorrencia() {
       .then((resultado) => {
         setMensagem(`Ocorrência registrada com sucesso. Código ${resultado.id}.`);
         setDescricao('');
-        return listarAvisos()
+        return listarAvisos({ pagina })
           .then((avisosAtualizados) => setAvisos(avisosAtualizados))
           .catch((falhaAtualizacao) => {
             setErro(true);
@@ -107,6 +114,7 @@ function Ocorrencia() {
         </form>
       )}
 
+      <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando || enviando} aoMudar={setPagina} />
       {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem'} role="status">{mensagem}</p>}
     </section>
   );

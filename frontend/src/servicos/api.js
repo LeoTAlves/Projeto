@@ -5,6 +5,7 @@ const URL_DA_API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 // Lista avisos e envia apenas os filtros que a tela realmente escolheu.
 export async function listarAvisos(filtrosInformados = {}) {
   const consulta = new URLSearchParams();
+  consulta.append('pagina', String(filtrosInformados.pagina || 1));
 
   if (filtrosInformados.pavilhao) {
     consulta.append('pavilhao', filtrosInformados.pavilhao);
@@ -54,7 +55,9 @@ export async function criarAviso(dados) {
   })
     .then((resposta) => {
       if (!resposta.ok) {
-        throw new Error('Não foi possível registrar o aviso.');
+        return resposta.json().then((mensagem) => {
+          throw new Error(typeof mensagem.detail === 'string' ? mensagem.detail : 'Confira os campos do aviso e a data informada.');
+        });
       }
       return resposta.json();
     })

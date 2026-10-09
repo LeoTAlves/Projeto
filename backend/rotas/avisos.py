@@ -1,29 +1,37 @@
-﻿from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from banco import obter_sessao
 from esquemas.aviso import AvisoCriar, AvisoDetalhe, AvisoSaida
 from servicos.aviso import buscar_aviso, criar_aviso as criar_aviso_servico, listar_avisos
 
-# A rota de avisos concentra as ações do visitante e do balcão sobre a lista e o detalhe do aviso.
+# O router reúne os caminhos que o visitante e o balcão já utilizam.
 router = APIRouter(prefix="/avisos", tags=["avisos"])
 
-# Lista os avisos com filtros opcionais por pavilhão e por visitante, conforme a tela solicitante.
+
+# Depends entrega a sessão da requisição; os filtros e a página seguem até o repositório.
 @router.get("", response_model=list[AvisoSaida], status_code=status.HTTP_200_OK)
 def listar_avisos_rotas(
     pavilhao: str | None = Query(default=None, description="Filtra por pavilhão"),
     visitante_id: int | None = Query(default=None, description="Filtra por visitante"),
+    pagina: int = Query(default=1, ge=1, description="Página de dez avisos"),
+    sessao=Depends(obter_sessao),
 ):
-    return listar_avisos(pavilhao=pavilhao, visitante_id=visitante_id)
+    return listar_avisos(sessao, pavilhao=pavilhao, visitante_id=visitante_id, pagina=pagina)
 
-# Mostra o aviso completo e as ocorrências associadas ao registro escolhido.
+
+# O response_model lê os atributos do modelo, incluindo aviso.ocorrencias no detalhe.
 @router.get("/{aviso_id}", response_model=AvisoDetalhe, status_code=status.HTTP_200_OK)
-def mostrar_aviso(aviso_id: int):
-    aviso = buscar_aviso(aviso_id)
+def mostrar_aviso(aviso_id: int, sessao=Depends(obter_sessao)):
+    aviso = buscar_aviso(sessao, aviso_id)
     if aviso is None:
         raise HTTPException(status_code=404, detail="Aviso não encontrado.")
     return aviso
 
-# Cria um aviso novo em nome do visitante, começando sempre em procurando.
+
+# A rota traduz a recusa do serviço; o serviço não conhece códigos HTTP.
 @router.post("", response_model=AvisoSaida, status_code=status.HTTP_201_CREATED)
-def criar_aviso_rotas(dados: AvisoCriar):
-    aviso = criar_aviso_servico(dados.model_dump())
+def criar_aviso_rotas(dados: AvisoCriar, sessao=Depends(obter_sessao)):
+    aviso = criar_aviso_servico(sessao, dados.model_dump())
+    if isinstance(aviso, str):
+        raise HTTPException(status_code=422, detail=aviso)
     return aviso

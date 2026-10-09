@@ -1,8 +1,10 @@
 ﻿import { useEffect, useState } from 'react';
 import { listarAvisos, buscarAviso } from '../../../servicos/api';
+import Paginacao from '../../../componentes/Paginacao';
 
 // A tela de meus avisos combina a lista do visitante com o detalhe de cada aviso e suas ocorrências.
 function MeusAvisos({ visitanteId }) {
+  const [pagina, setPagina] = useState(1);
   const [avisos, setAvisos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
@@ -16,7 +18,7 @@ function MeusAvisos({ visitanteId }) {
     setAvisos([]);
     setAvisoSelecionado(null);
 
-    listarAvisos({ visitante_id: visitanteId })
+    listarAvisos({ visitante_id: visitanteId, pagina })
       .then((resultado) => {
         setAvisos(resultado);
         if (resultado.length === 0) return null;
@@ -31,7 +33,7 @@ function MeusAvisos({ visitanteId }) {
         setCarregando(false);
         setCarregandoDetalhe(false);
       });
-  }, [visitanteId]);
+  }, [visitanteId, pagina]);
 
   // O detalhe escolhido inclui o histórico de ocorrências que pertence ao aviso.
   const abrirAviso = (avisoId) => {
@@ -65,6 +67,7 @@ function MeusAvisos({ visitanteId }) {
             ))}
           </ul>
         )}
+        <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando} aoMudar={setPagina} />
       </div>
 
       <div className="cartao detalhe">
