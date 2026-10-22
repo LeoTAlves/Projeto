@@ -5,8 +5,15 @@ from modelos.ocorrencia import Ocorrencia  # Registra o destino do relationship 
 
 
 # A sessão vem da requisição; get devolve o modelo ou None quando o id não existe.
-def buscar_aviso_por_id(sessao, aviso_id):
-    return sessao.get(Aviso, aviso_id)
+def buscar_aviso_por_id(sessao, aviso_id, visitante_id=None):
+    if visitante_id is None:
+        return sessao.get(Aviso, aviso_id)
+
+    consulta = select(Aviso).where(
+        Aviso.id == aviso_id,
+        Aviso.visitante_id == visitante_id,
+    )
+    return sessao.scalar(consulta)
 
 
 # WHERE, ORDER BY, LIMIT e OFFSET são executados no MySQL, antes de trazer as linhas.

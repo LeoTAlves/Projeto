@@ -20,3 +20,13 @@ class UsuarioSaida(BaseModel):
     nome: str
     tipo: TipoUsuario
     email: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
+class Login(BaseModel):
+    email: str = Field(..., min_length=5, max_length=100)
+    senha: str = Field(..., min_length=8, max_length=100)

@@ -9,7 +9,6 @@ class AvisoCriar(BaseModel):
     descricao: str = Field(..., min_length=3, max_length=200)
     pavilhao: Literal["Pavilhao 1", "Pavilhao 2", "Pavilhao 3"]
     noite: date  # Valida uma data real, mantendo AAAA-MM-DD no JSON.
-    visitante_id: int = Field(..., ge=1)
 
 # O schema de saída traz os dados principais do aviso e o estado atual da busca.
 class AvisoSaida(BaseModel):

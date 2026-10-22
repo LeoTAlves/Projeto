@@ -12,4 +12,5 @@ def obter_configuracao():
     return {
         "frontend_url": FRONTEND_URL,
         "url_do_banco": os.getenv("URL_DO_BANCO"),
+        "chave_do_token": os.getenv("CHAVE_DO_TOKEN"),
     }

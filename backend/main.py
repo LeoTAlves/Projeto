@@ -2,6 +2,7 @@
 from fastapi.middleware.cors import CORSMiddleware
 
 from configuracao import FRONTEND_URL
+from rotas.autenticacao import router as autenticacao_router
 from rotas.avisos import router as avisos_router
 from rotas.ocorrencias import router as ocorrencias_router
 from rotas.usuarios import router as usuarios_router
@@ -19,3 +20,4 @@ app.add_middleware(
 app.include_router(avisos_router)
 app.include_router(ocorrencias_router)
 app.include_router(usuarios_router)
+app.include_router(autenticacao_router)
