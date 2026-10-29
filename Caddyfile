@@ -1,0 +1,14 @@
+# Atende HTTP na porta interna 80, sem domínio ou configuração de HTTPS.
+:80 {
+    # Remove o prefixo /api antes de encaminhar o pedido à API.
+    handle_path /api/* {
+        reverse_proxy api:8000
+    }
+
+    # Entrega os arquivos do frontend e direciona rotas do React para index.html.
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+}

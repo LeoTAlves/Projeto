@@ -9,16 +9,17 @@ from servicos.usuario import autenticar, obter_usuario_atual
 router = APIRouter(tags=["autenticacao"])
 
 
-# NOVO: estes nomes representam os dois grupos de permissão do projeto.
 GRUPO_VISITANTE = "visitante"
 GRUPO_EQUIPE = "equipe"
 
 
-# NOVO: cria uma dependência reutilizável para proteger uma rota por grupo.
 def exigir_grupo(*grupos_permitidos):
-    # NOVO: o usuário já chega validado pelo JWT antes desta conferência.
+    grupos = tuple(grupos_permitidos)
+    if not grupos:
+        raise ValueError("Informe ao menos um grupo permitido.")
+
     def conferir_grupo(usuario=Depends(obter_usuario_atual)):
-        if usuario.tipo not in grupos_permitidos:
+        if usuario.tipo not in grupos:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Seu grupo não tem permissão para acessar este recurso.",

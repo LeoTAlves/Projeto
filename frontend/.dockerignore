@@ -1,0 +1,5 @@
+# Evita enviar dependências instaladas na máquina para o build.
+node_modules/
+
+# Evita enviar arquivos de build antigos; a imagem os gera novamente.
+dist/

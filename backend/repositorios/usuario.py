@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from modelos.usuario import Usuario
 
@@ -9,7 +9,8 @@ def buscar_usuario_por_id(sessao, usuario_id):
 
 
 def buscar_por_email(sessao, email):
-    consulta = select(Usuario).where(Usuario.email == email)
+    email_normalizado = (email or "").strip().lower()
+    consulta = select(Usuario).where(func.lower(Usuario.email) == email_normalizado)
     return sessao.scalar(consulta)
 
 

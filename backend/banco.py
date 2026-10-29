@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from configuracao import obter_configuracao
 
@@ -7,7 +8,8 @@ from configuracao import obter_configuracao
 configuracao = obter_configuracao()
 if not configuracao["url_do_banco"]:
     raise ValueError("Configure URL_DO_BANCO no backend/.env antes de iniciar a API.")
-engine = create_engine(configuracao["url_do_banco"])
+# O pooler do banco gerencia as conexões; NullPool evita manter outro pool no SQLAlchemy.
+engine = create_engine(configuracao["url_do_banco"], poolclass=NullPool)
 Sessao = sessionmaker(bind=engine)
 
 

@@ -1,0 +1,35 @@
+# Define os serviços da aplicação; o Compose fornece a rede padrão entre eles.
+services:
+  # Mantém o MySQL acessível somente pela rede interna do Compose e persiste os dados.
+  banco:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: cade
+      MYSQL_USER: app
+      MYSQL_PASSWORD: "${SENHA_DO_BANCO}"
+      MYSQL_ROOT_PASSWORD: "${SENHA_DO_BANCO}"
+    volumes:
+      - dados_do_banco:/var/lib/mysql
+
+  # Executa a API e aponta o SQLAlchemy para o serviço banco na rede interna.
+  api:
+    build: ./backend
+    environment:
+      URL_DO_BANCO: "mysql+mysqlconnector://app:${SENHA_DO_BANCO}@banco:3306/cade"
+      CHAVE_DO_TOKEN: "${CHAVE_DO_TOKEN}"
+    depends_on:
+      - banco
+
+  # Publica o Caddy na porta 8080 do computador e encaminha pedidos à API.
+  web:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - api
+
+# Guarda os dados do MySQL fora do ciclo de vida do contêiner.
+volumes:
+  dados_do_banco:

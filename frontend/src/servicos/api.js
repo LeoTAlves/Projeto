@@ -1,5 +1,76 @@
-// A URL pode ser sobrescrita pelo Vite sem mexer nas chamadas de cada tela.
-const URL_DA_API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// A configuração central permite usar os mesmos serviços nos dois ambientes.
+import { URL_DA_API } from '../api.js';
+const CHAVE_TOKEN = 'cade_token';
+
+function lerToken() {
+  return sessionStorage.getItem(CHAVE_TOKEN);
+}
+
+export function salvarToken(token) {
+  sessionStorage.setItem(CHAVE_TOKEN, token);
+}
+
+export function limparSessao() {
+  sessionStorage.removeItem(CHAVE_TOKEN);
+}
+
+async function interpretarErro(resposta) {
+  const texto = await resposta.text();
+
+  if (!texto) {
+    return 'Não foi possível concluir a operação.';
+  }
+
+  try {
+    const json = JSON.parse(texto);
+    if (typeof json.detail === 'string') {
+      return json.detail;
+    }
+    if (Array.isArray(json.detail)) {
+      return json.detail.map((item) => item.msg || item).join(', ');
+    }
+    return 'Não foi possível concluir a operação.';
+  } catch {
+    return texto;
+  }
+}
+
+async function executarRequisicao(endereco, opcoes = {}) {
+  const cabecalhos = { ...(opcoes.headers || {}) };
+  const token = lerToken();
+
+  if (token) {
+    cabecalhos.Authorization = `Bearer ${token}`;
+  }
+
+  if (opcoes.body && !cabecalhos['Content-Type']) {
+    cabecalhos['Content-Type'] = 'application/json';
+  }
+
+  const resposta = await fetch(endereco, {
+    ...opcoes,
+    headers: cabecalhos,
+  });
+
+  if (!resposta.ok) {
+    const mensagem = await interpretarErro(resposta);
+    throw new Error(mensagem);
+  }
+
+  const conteudo = await resposta.text();
+  return conteudo ? JSON.parse(conteudo) : null;
+}
+
+export async function login(dados) {
+  return executarRequisicao(URL_DA_API + "/login", {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  });
+}
+
+export async function buscarUsuarioAtual() {
+  return executarRequisicao(URL_DA_API + "/usuarios/eu");
+}
 
 // Os serviços do front centralizam as chamadas do fetch e tratam os estados de carregamento e de erro.
 // Lista avisos e envia apenas os filtros que a tela realmente escolheu.
@@ -16,88 +87,33 @@ export async function listarAvisos(filtrosInformados = {}) {
   }
 
   const parametros = consulta.toString();
-  const endereco = parametros ? `${URL_DA_API}/avisos?${parametros}` : `${URL_DA_API}/avisos`;
+  const endereco = parametros ? URL_DA_API + "/avisos?" + parametros : URL_DA_API + "/avisos";
 
-  return fetch(endereco)
-    .then((resposta) => {
-      if (!resposta.ok) {
-        throw new Error('Não foi possível carregar os avisos.');
-      }
-      return resposta.json();
-    })
-    .catch((erro) => {
-      throw new Error(erro.message || 'Erro ao consultar avisos.');
-    });
+  return executarRequisicao(endereco);
 }
 
 // Busca o detalhe que inclui as ocorrências associadas ao aviso.
 export async function buscarAviso(avisoId) {
-  return fetch(`${URL_DA_API}/avisos/${avisoId}`)
-    .then((resposta) => {
-      if (!resposta.ok) {
-        throw new Error('Não foi possível abrir o aviso.');
-      }
-      return resposta.json();
-    })
-    .catch((erro) => {
-      throw new Error(erro.message || 'Erro ao abrir o aviso.');
-    });
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId);
 }
 
 // Envia ao back os dados validados do novo aviso da pessoa visitante.
 export async function criarAviso(dados) {
-  return fetch(`${URL_DA_API}/avisos`, {
+  return executarRequisicao(URL_DA_API + "/avisos", {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(dados),
-  })
-    .then((resposta) => {
-      if (!resposta.ok) {
-        return resposta.json().then((mensagem) => {
-          throw new Error(typeof mensagem.detail === 'string' ? mensagem.detail : 'Confira os campos do aviso e a data informada.');
-        });
-      }
-      return resposta.json();
-    })
-    .catch((erro) => {
-      throw new Error(erro.message || 'Erro ao registrar aviso.');
-    });
+  });
 }
 
 // Consulta o histórico quando uma tela precisa apenas das ocorrências.
 export async function listarOcorrencias(avisoId) {
-  return fetch(`${URL_DA_API}/avisos/${avisoId}/ocorrencias`)
-    .then((resposta) => {
-      if (!resposta.ok) {
-        throw new Error('Não foi possível carregar as ocorrências.');
-      }
-      return resposta.json();
-    })
-    .catch((erro) => {
-      throw new Error(erro.message || 'Erro ao carregar ocorrências.');
-    });
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/ocorrencias");
 }
 
 // Envia um achado ou uma devolução e preserva a mensagem de recusa do serviço.
 export async function criarOcorrencia(avisoId, dados) {
-  return fetch(`${URL_DA_API}/avisos/${avisoId}/ocorrencias`, {
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/ocorrencias", {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify(dados),
-  })
-    .then((resposta) => {
-      if (!resposta.ok) {
-        return resposta.json().then((mensagem) => {
-          throw new Error(mensagem.detail || 'Não foi possível registrar a ocorrência.');
-        });
-      }
-      return resposta.json();
-    })
-    .catch((erro) => {
-      throw new Error(erro.message || 'Erro ao registrar ocorrência.');
-    });
+  });
 }

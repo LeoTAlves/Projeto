@@ -1,8 +1,16 @@
+# Ignora arquivos locais de ambiente que podem conter segredos.
 backend/.env
+/.env
+
+# Ignora caches e ambientes virtuais do Python.
 backend/__pycache__/
 backend/.venv/
 .venv/
+**/__pycache__/
+
+# Ignora dependências e arquivos compilados do frontend.
 frontend/node_modules/
 frontend/dist/
-**/__pycache__/
+
+# Ignora arquivos temporários do projeto.
 tmp/

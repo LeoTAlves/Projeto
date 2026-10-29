@@ -4,9 +4,7 @@ from fastapi import Depends, HTTPException, status
 from banco import obter_sessao
 from configuracao import obter_configuracao
 from repositorios import usuario as repositorio_usuario
-from segurança import gerar_hash
-from segurança import verificar_senha
-from seguranca import ler_token
+from seguranca import gerar_hash, ler_token, verificar_senha
 
 
 configuracao = obter_configuracao()
@@ -21,7 +19,8 @@ def listar_usuarios(sessao):
 
 
 def autenticar(sessao, email, senha):
-    usuario = repositorio_usuario.buscar_por_email(sessao, email)
+    email_normalizado = (email or "").strip().lower()
+    usuario = repositorio_usuario.buscar_por_email(sessao, email_normalizado)
     if usuario is None or not verificar_senha(senha, usuario.senha):
         return None
     return usuario
@@ -53,6 +52,7 @@ def obter_usuario_atual(
 
 
 def criar_usuario(sessao, dados):
+    dados = {**dados, "email": (dados.get("email") or "").strip().lower()}
     usuario_existente = repositorio_usuario.buscar_por_email(sessao, dados["email"])
     if usuario_existente is not None:
         return "E-mail já cadastrado."
