@@ -68,6 +68,18 @@ button:disabled {
   text-align: center;
 }
 
+.botao-link {
+  margin-top: 0.75rem;
+  padding: 0.25rem 0;
+  background: transparent;
+  color: #0f172a;
+  text-decoration: underline;
+}
+
+.sucesso {
+  color: #166534;
+}
+
 .botoes-perfil {
   display: flex;
   gap: 1rem;

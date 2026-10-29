@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from banco import obter_sessao
-from esquemas.usuario import UsuarioCriar, UsuarioSaida
+from esquemas.usuario import UsuarioCadastro, UsuarioCriar, UsuarioSaida
 from rotas.autenticacao import GRUPO_EQUIPE, exigir_grupo
 from servicos.usuario import criar_usuario, listar_usuarios, obter_usuario_atual
 
@@ -22,8 +22,20 @@ def listar_usuarios_rota(
     return listar_usuarios(sessao)
 
 
+@router.post("/cadastro", response_model=UsuarioSaida, status_code=status.HTTP_201_CREATED)
+def cadastrar_usuario_rota(dados: UsuarioCadastro, sessao=Depends(obter_sessao)):
+    usuario = criar_usuario(sessao, {**dados.model_dump(), "tipo": "visitante"})
+    if isinstance(usuario, str):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=usuario)
+    return usuario
+
+
 @router.post("", response_model=UsuarioSaida, status_code=status.HTTP_201_CREATED)
-def criar_usuario_rota(dados: UsuarioCriar, sessao=Depends(obter_sessao)):
+def criar_usuario_rota(
+    dados: UsuarioCriar,
+    usuario=Depends(exigir_grupo(GRUPO_EQUIPE)),
+    sessao=Depends(obter_sessao),
+):
     usuario = criar_usuario(sessao, dados.model_dump())
     if isinstance(usuario, str):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=usuario)

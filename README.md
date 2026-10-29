@@ -34,7 +34,7 @@ CREATE DATABASE IF NOT EXISTS cade
 Crie `backend/.env` com as chaves de `backend/.env.exemplo` e seus valores locais:
 
 ```dotenv
-FRONTEND_URL=http://localhost:5173,https://projeto-indol-nine.vercel.app
+FRONTEND_URL=http://localhost:5173,https://projeto-indol-nine.vercel.app,https://projeto-tt9n.vercel.app
 URL_DO_BANCO=mysql+mysqlconnector://USUARIO:SENHA@localhost:3306/cade
 ```
 
@@ -106,7 +106,9 @@ npm run dev
 
 Abra [o Cadê](http://localhost:5173). O CORS autoriza as origens exatas listadas em `FRONTEND_URL`, separadas por vírgula. Em produção, configure essa variável também no ambiente do serviço que hospeda o backend; o arquivo `backend/.env` só configura a execução local. Se o Vite escolher outra porta porque a 5173 está ocupada, ajuste a origem e reinicie o backend.
 
-As quatro telas continuam disponíveis. Balcão, Meus avisos e seleção do aviso na tela de ocorrência possuem controles para navegar entre as páginas. A seleção do perfil continua sem login, como a cartilha pede nesta etapa.
+O login oferece a opção **Não tem uma conta? Criar conta**, que cadastra um perfil de visitante com nome, e-mail e senha. Depois do cadastro, entre com as credenciais criadas. Contas de equipe continuam sendo criadas apenas por alguém autenticado como equipe.
+
+As quatro telas continuam disponíveis. Balcão, Meus avisos e seleção do aviso na tela de ocorrência possuem controles para navegar entre as páginas.
 
 ## Estrutura e responsabilidades
 
@@ -151,6 +153,7 @@ A rota valida `pagina >= 1`: `pagina=0` devolve `422`. Uma página sem resultado
 | `POST /avisos` | `201`, aviso em procurando; `422` para entrada inválida ou usuário que não seja visitante cadastrado. |
 | `GET /avisos/{aviso_id}/ocorrencias` | `200`, ocorrências do aviso; `404` se o aviso não existir. |
 | `POST /avisos/{aviso_id}/ocorrencias` | `201`, ocorrência e situação gravadas juntas; `404` para aviso inexistente e `422` para aviso devolvido ou entrada inválida. |
+| `POST /usuarios/cadastro` | `201`, cria uma conta de visitante; `409` se o e-mail já estiver cadastrado e `422` para entrada inválida. |
 
 As datas usam `AAAA-MM-DD` no JSON e `DATE` no MySQL. Descrições têm de 3 a 200 caracteres. Um valor de noite que não represente uma data real é recusado com `422`.
 

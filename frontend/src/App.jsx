@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { buscarUsuarioAtual, limparSessao, login, salvarToken } from './servicos/api';
+import { buscarUsuarioAtual, criarConta, limparSessao, login, salvarToken } from './servicos/api';
 import RegistrarPerda from './telas/pessoa/registrar-perda/RegistrarPerda';
 import MeusAvisos from './telas/pessoa/meus-avisos/MeusAvisos';
 import Balcao from './telas/gestao/balcao/Balcao';
@@ -9,11 +9,16 @@ import Ocorrencia from './telas/gestao/ocorrencia/Ocorrencia';
 function App() {
   const [usuario, setUsuario] = useState(null);
   const [tela, setTela] = useState('registrar');
+  const [nomeCadastro, setNomeCadastro] = useState('');
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
   const [erroLogin, setErroLogin] = useState('');
+  const [mensagemCadastro, setMensagemCadastro] = useState('');
+  const [modoCadastro, setModoCadastro] = useState(false);
   const [carregandoSessao, setCarregandoSessao] = useState(true);
   const [carregandoLogin, setCarregandoLogin] = useState(false);
+  const [carregandoCadastro, setCarregandoCadastro] = useState(false);
 
   const carregarUsuario = async () => {
     setCarregandoSessao(true);
@@ -38,6 +43,7 @@ function App() {
   const entrar = async (evento) => {
     evento.preventDefault();
     setErroLogin('');
+    setMensagemCadastro('');
     setCarregandoLogin(true);
 
     try {
@@ -55,6 +61,39 @@ function App() {
     } finally {
       setCarregandoLogin(false);
     }
+  };
+
+  const cadastrar = async (evento) => {
+    evento.preventDefault();
+    setErroLogin('');
+    setMensagemCadastro('');
+
+    if (senha !== confirmarSenha) {
+      setErroLogin('As senhas não coincidem.');
+      return;
+    }
+
+    setCarregandoCadastro(true);
+    try {
+      await criarConta({ nome: nomeCadastro, email, senha });
+      setModoCadastro(false);
+      setNomeCadastro('');
+      setSenha('');
+      setConfirmarSenha('');
+      setMensagemCadastro('Conta criada! Entre com seu e-mail e senha.');
+    } catch (erro) {
+      setErroLogin(erro.message || 'Não foi possível criar sua conta.');
+    } finally {
+      setCarregandoCadastro(false);
+    }
+  };
+
+  const alternarModo = () => {
+    setModoCadastro((atual) => !atual);
+    setErroLogin('');
+    setMensagemCadastro('');
+    setSenha('');
+    setConfirmarSenha('');
   };
 
   const sair = () => {
@@ -82,9 +121,24 @@ function App() {
       <div className="pagina-selecao">
         <div className="card">
           <h1>Cadê, achados e perdidos</h1>
-          <p>Entre com e-mail e senha para acessar o sistema.</p>
+          <p>{modoCadastro ? 'Crie sua conta de visitante para acessar o sistema.' : 'Entre com e-mail e senha para acessar o sistema.'}</p>
 
-          <form onSubmit={entrar} className="formulario">
+          <form onSubmit={modoCadastro ? cadastrar : entrar} className="formulario">
+            {modoCadastro && (
+              <label>
+                Nome
+                <input
+                  required
+                  minLength={3}
+                  maxLength={100}
+                  value={nomeCadastro}
+                  onChange={(evento) => setNomeCadastro(evento.target.value)}
+                  placeholder="Seu nome"
+                  autoComplete="name"
+                />
+              </label>
+            )}
+
             <label>
               E-mail
               <input
@@ -93,6 +147,7 @@ function App() {
                 value={email}
                 onChange={(evento) => setEmail(evento.target.value)}
                 placeholder="nome@email.com"
+                autoComplete="email"
               />
             </label>
 
@@ -101,18 +156,46 @@ function App() {
               <input
                 required
                 type="password"
+                minLength={modoCadastro ? 8 : undefined}
                 value={senha}
                 onChange={(evento) => setSenha(evento.target.value)}
                 placeholder="Sua senha"
+                autoComplete={modoCadastro ? 'new-password' : 'current-password'}
               />
             </label>
 
-            <button type="submit" disabled={carregandoLogin}>
-              {carregandoLogin ? 'Entrando...' : 'Entrar'}
+            {modoCadastro && (
+              <label>
+                Confirmar senha
+                <input
+                  required
+                  type="password"
+                  minLength={8}
+                  value={confirmarSenha}
+                  onChange={(evento) => setConfirmarSenha(evento.target.value)}
+                  placeholder="Digite a senha novamente"
+                  autoComplete="new-password"
+                />
+              </label>
+            )}
+
+            <button type="submit" disabled={carregandoLogin || carregandoCadastro}>
+              {modoCadastro
+                ? (carregandoCadastro ? 'Criando conta...' : 'Criar conta')
+                : (carregandoLogin ? 'Entrando...' : 'Entrar')}
             </button>
           </form>
 
+          {mensagemCadastro && <p className="mensagem sucesso" role="status">{mensagemCadastro}</p>}
           {erroLogin && <p className="mensagem erro" role="alert">{erroLogin}</p>}
+          <button
+            type="button"
+            className="botao-link"
+            onClick={alternarModo}
+            disabled={carregandoLogin || carregandoCadastro}
+          >
+            {modoCadastro ? 'Já tem uma conta? Entrar' : 'Não tem uma conta? Criar conta'}
+          </button>
         </div>
       </div>
     );

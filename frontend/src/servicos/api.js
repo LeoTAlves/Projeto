@@ -68,6 +68,13 @@ export async function login(dados) {
   });
 }
 
+export async function criarConta(dados) {
+  return executarRequisicao(URL_DA_API + "/usuarios/cadastro", {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  });
+}
+
 export async function buscarUsuarioAtual() {
   return executarRequisicao(URL_DA_API + "/usuarios/eu");
 }

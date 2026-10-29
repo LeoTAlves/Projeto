@@ -14,6 +14,12 @@ class UsuarioCriar(BaseModel):
     senha: str = Field(..., min_length=8, max_length=100)
 
 
+class UsuarioCadastro(BaseModel):
+    nome: str = Field(..., min_length=3, max_length=100)
+    email: str = Field(..., min_length=5, max_length=100)
+    senha: str = Field(..., min_length=8, max_length=100)
+
+
 # A senha nunca volta na resposta da API.
 class UsuarioSaida(BaseModel):
     id: int
