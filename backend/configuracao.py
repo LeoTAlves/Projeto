@@ -6,6 +6,11 @@ from pathlib import Path
 load_dotenv(Path(__file__).with_name(".env"))
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URLS = [
+    origem.strip().rstrip("/")
+    for origem in FRONTEND_URL.split(",")
+    if origem.strip()
+]
 
 # A configuração concentra a leitura do ambiente, inclusive a conexão que contém a senha.
 def obter_configuracao():

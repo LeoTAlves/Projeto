@@ -34,7 +34,7 @@ CREATE DATABASE IF NOT EXISTS cade
 Crie `backend/.env` com as chaves de `backend/.env.exemplo` e seus valores locais:
 
 ```dotenv
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173,https://projeto-indol-nine.vercel.app
 URL_DO_BANCO=mysql+mysqlconnector://USUARIO:SENHA@localhost:3306/cade
 ```
 
@@ -104,7 +104,7 @@ npm install
 npm run dev
 ```
 
-Abra [o Cadê](http://localhost:5173). O CORS autoriza a origem exata configurada em `FRONTEND_URL`. Se o Vite escolher outra porta porque a 5173 está ocupada, ajuste a origem e reinicie o backend.
+Abra [o Cadê](http://localhost:5173). O CORS autoriza as origens exatas listadas em `FRONTEND_URL`, separadas por vírgula. Em produção, configure essa variável também no ambiente do serviço que hospeda o backend; o arquivo `backend/.env` só configura a execução local. Se o Vite escolher outra porta porque a 5173 está ocupada, ajuste a origem e reinicie o backend.
 
 As quatro telas continuam disponíveis. Balcão, Meus avisos e seleção do aviso na tela de ocorrência possuem controles para navegar entre as páginas. A seleção do perfil continua sem login, como a cartilha pede nesta etapa.
 

@@ -1,7 +1,7 @@
 ﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from configuracao import FRONTEND_URL
+from configuracao import FRONTEND_URLS
 from rotas.autenticacao import router as autenticacao_router
 from rotas.avisos import router as avisos_router
 from rotas.ocorrencias import router as ocorrencias_router
@@ -11,7 +11,7 @@ from rotas.usuarios import router as usuarios_router
 app = FastAPI(title="Cadê, achados e perdidos de evento")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=FRONTEND_URLS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
