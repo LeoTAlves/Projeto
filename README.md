@@ -106,7 +106,9 @@ npm run dev
 
 Abra [o Cadê](http://localhost:5173). O CORS autoriza as origens exatas listadas em `FRONTEND_URL`, separadas por vírgula. Em produção, configure essa variável também no ambiente do serviço que hospeda o backend; o arquivo `backend/.env` só configura a execução local. Se o Vite escolher outra porta porque a 5173 está ocupada, ajuste a origem e reinicie o backend.
 
-O login oferece a opção **Não tem uma conta? Criar conta**, que cadastra um perfil de visitante com nome, e-mail e senha. Depois do cadastro, entre com as credenciais criadas. Contas de equipe continuam sendo criadas apenas por alguém autenticado como equipe.
+O login oferece a opção **Não tem uma conta? Criar conta**, que cadastra um perfil de visitante com nome, e-mail e senha. Depois do cadastro, entre com as credenciais criadas. Somente o administrador pode criar contas internas pelo `POST /usuarios`. Na tela **Cadastrar equipe**, ele informa nome, e-mail e senha do novo membro. Equipe comum acessa o balcão e as ocorrências, sem administrar usuários.
+
+A primeira conta administradora é ativada com [docs/liberar_admin.sql](docs/liberar_admin.sql), depois de publicar o backend com suporte ao tipo `admin`. A conta deve existir com senha criada pela aplicação; o SQL não cria nem troca senhas. Consulte [docs/TESTES_ADMIN.md](docs/TESTES_ADMIN.md) para ativação e testes no Supabase. O cadastro público não concede administração pelo e-mail informado.
 
 As quatro telas continuam disponíveis. Balcão, Meus avisos e seleção do aviso na tela de ocorrência possuem controles para navegar entre as páginas.
 

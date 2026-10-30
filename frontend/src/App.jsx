@@ -4,6 +4,7 @@ import RegistrarPerda from './telas/pessoa/registrar-perda/RegistrarPerda';
 import MeusAvisos from './telas/pessoa/meus-avisos/MeusAvisos';
 import Balcao from './telas/gestao/balcao/Balcao';
 import Ocorrencia from './telas/gestao/ocorrencia/Ocorrencia';
+import CadastrarEquipe from './telas/gestao/equipe/CadastrarEquipe';
 
 // O login identifica o usuário pelo token e escolhe a tela conforme o grupo retornado.
 function App() {
@@ -211,14 +212,20 @@ function App() {
     { id: 'ocorrencia', nome: 'A ocorrência' },
   ];
 
-  const telasAtuais = usuario.tipo === 'visitante' ? telasVisitante : telasEquipe;
+  // A permissão vem da conta autenticada, sem decidir administração pelo e-mail no navegador.
+  const administrador = usuario.tipo === 'admin';
+  const podeOperarBalcao = administrador || usuario.tipo === 'equipe';
+  const telasGestao = administrador
+    ? [...telasEquipe, { id: 'equipe', nome: 'Cadastrar equipe' }]
+    : telasEquipe;
+  const telasAtuais = usuario.tipo === 'visitante' ? telasVisitante : telasGestao;
 
   return (
     <div className="app-shell">
       <header className="cabecalho">
         <div>
           <p className="titulo-pequeno">Cartilha 5</p>
-          <h2>{usuario.tipo === 'visitante' ? 'Perfil da visitante' : 'Perfil da gestão'}</h2>
+          <h2>{administrador ? 'Administrador' : usuario.tipo === 'visitante' ? 'Perfil da visitante' : 'Equipe do balcão'}</h2>
           <p>{usuario.nome}</p>
         </div>
         <button className="botao-secundario" onClick={sair}>
@@ -241,8 +248,9 @@ function App() {
       <main className="conteudo-principal">
         {usuario.tipo === 'visitante' && tela === 'registrar' && <RegistrarPerda visitanteId={usuario.id} />}
         {usuario.tipo === 'visitante' && tela === 'meus' && <MeusAvisos visitanteId={usuario.id} />}
-        {usuario.tipo === 'equipe' && tela === 'balcao' && <Balcao />}
-        {usuario.tipo === 'equipe' && tela === 'ocorrencia' && <Ocorrencia />}
+        {podeOperarBalcao && tela === 'balcao' && <Balcao />}
+        {podeOperarBalcao && tela === 'ocorrencia' && <Ocorrencia />}
+        {administrador && tela === 'equipe' && <CadastrarEquipe />}
       </main>
     </div>
   );

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from banco import obter_sessao
 from esquemas.ocorrencia import OcorrenciaCriar, OcorrenciaSaida
-from rotas.autenticacao import GRUPO_EQUIPE, GRUPO_VISITANTE, exigir_grupo
+from rotas.autenticacao import GRUPO_ADMIN, GRUPO_EQUIPE, GRUPO_VISITANTE, exigir_grupo
 from servicos.ocorrencia import listar_ocorrencias_do_aviso, registrar_ocorrencia
 from servicos.usuario import obter_usuario_atual
 
@@ -29,7 +29,8 @@ def listar_ocorrencias_rotas(
 def criar_ocorrencia_rotas(
     aviso_id: int,
     dados: OcorrenciaCriar,
-    usuario=Depends(exigir_grupo(GRUPO_EQUIPE)),
+    # O administrador também opera o balcão; visitantes continuam sem essa permissão.
+    usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
     sessao=Depends(obter_sessao),
 ):
     # NOVO: a equipe pode operar avisos de qualquer visitante; só o visitante teria filtro de dono.

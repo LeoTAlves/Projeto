@@ -135,6 +135,19 @@ button:disabled {
   gap: 1rem;
 }
 
+/* Mantém o formulário de equipe dentro do cartão também em telas pequenas. */
+.cadastro-equipe {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.cadastro-equipe legend {
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
 .formulario label,
 .cartao label {
   display: grid;

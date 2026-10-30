@@ -24,7 +24,8 @@ class UsuarioCadastro(BaseModel):
 class UsuarioSaida(BaseModel):
     id: int
     nome: str
-    tipo: TipoUsuario
+    # Admin aparece na resposta, mas não pode ser escolhido ao criar uma conta pela API.
+    tipo: Literal["visitante", "equipe", "admin"]
     email: str
 
 

@@ -1,14 +1,12 @@
 # Próximos passos
 
-- Executar `docs/liberar_equipe.sql`, adaptado para PostgreSQL, no SQL Editor do
-  Supabase usado pela API para liberar a conta indicada como equipe.
-  Se a API local usa o mesmo banco, executar apenas uma vez; caso use outro
-  PostgreSQL, repetir nele. Banco atual informado pelo responsável: Supabase.
-  O comando foi preparado, mas ainda não foi executado. Validar novo login e as
-  telas O balcão e A ocorrência nos dois ambientes.
-- Integrar o login ao frontend: criar a entrada de e-mail e senha, guardar o token
-  somente durante a sessão, enviar `Authorization` nas chamadas protegidas e
-  escolher a tela pelo grupo retornado em `GET /usuarios/eu`.
+- Publicar backend e frontend com suporte ao administrador. Criar a conta escolhida
+  pelo cadastro público, caso ainda não exista com senha, e executar
+  `docs/liberar_admin.sql` no Supabase. Esse comando substitui a promoção anterior
+  para equipe. A promoção e a publicação ainda não foram executadas.
+- Validar login como admin, cadastro de equipe e login do membro criado conforme
+  `docs/TESTES_ADMIN.md`. Se o ambiente local usa o mesmo banco, a promoção vale
+  para ambos; caso contrário, repetir no outro PostgreSQL.
 - Confirmar o motivo histórico da adoção do MySQL e do Alembic; a hipótese atual é
   exigência da aula `?`.
 - Confirmar o provedor da API de IA. OpenAI é a proposta atual `?`; Claude, Gemini

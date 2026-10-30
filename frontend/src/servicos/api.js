@@ -79,6 +79,14 @@ export async function buscarUsuarioAtual() {
   return executarRequisicao(URL_DA_API + "/usuarios/eu");
 }
 
+// O token do administrador autoriza o cadastro; o perfil enviado é sempre equipe.
+export async function cadastrarEquipe(dados) {
+  return executarRequisicao(URL_DA_API + "/usuarios", {
+    method: 'POST',
+    body: JSON.stringify({ ...dados, tipo: 'equipe' }),
+  });
+}
+
 // Os serviços do front centralizam as chamadas do fetch e tratam os estados de carregamento e de erro.
 // Lista avisos e envia apenas os filtros que a tela realmente escolheu.
 export async function listarAvisos(filtrosInformados = {}) {

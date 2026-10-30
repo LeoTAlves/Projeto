@@ -11,6 +11,7 @@ router = APIRouter(tags=["autenticacao"])
 
 GRUPO_VISITANTE = "visitante"
 GRUPO_EQUIPE = "equipe"
+GRUPO_ADMIN = "admin"
 
 
 def exigir_grupo(*grupos_permitidos):
