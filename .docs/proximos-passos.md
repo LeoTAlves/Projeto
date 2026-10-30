@@ -1,5 +1,11 @@
 # Próximos passos
 
+- Executar `docs/liberar_equipe.sql`, adaptado para PostgreSQL, no SQL Editor do
+  Supabase usado pela API para liberar a conta indicada como equipe.
+  Se a API local usa o mesmo banco, executar apenas uma vez; caso use outro
+  PostgreSQL, repetir nele. Banco atual informado pelo responsável: Supabase.
+  O comando foi preparado, mas ainda não foi executado. Validar novo login e as
+  telas O balcão e A ocorrência nos dois ambientes.
 - Integrar o login ao frontend: criar a entrada de e-mail e senha, guardar o token
   somente durante a sessão, enviar `Authorization` nas chamadas protegidas e
   escolher a tela pelo grupo retornado em `GET /usuarios/eu`.
