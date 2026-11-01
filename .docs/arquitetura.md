@@ -16,6 +16,8 @@
 - A tela `Balcao.jsx` lista avisos e filtra por pavilhão.
 - A tela `Ocorrencia.jsx` registra achados e devoluções.
 - A tela `CadastrarEquipe.jsx` permite ao administrador criar membros do balcão.
+- O administrador acessa esse formulário pelo menu Cadastrar equipe ou pelo botão
+  Cadastrar usuário da equipe no cabeçalho.
 - `POST /usuarios` exige o perfil `admin`. O cadastro público sempre cria visitantes.
 - Administradores também podem registrar ocorrências. O perfil é conferido no backend.
 

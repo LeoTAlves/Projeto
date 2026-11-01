@@ -104,6 +104,13 @@ button:disabled {
   text-transform: uppercase;
 }
 
+/* O cadastro do administrador e a saída permanecem acessíveis no computador e no celular. */
+.acoes-cabecalho {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .navegacao {
   display: flex;
   gap: 0.75rem;

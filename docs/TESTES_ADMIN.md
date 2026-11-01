@@ -10,6 +10,9 @@
    Confira que a conta aparece com `tipo = admin`.
 4. Saia da aplicação e entre novamente com essa conta.
 5. Devem aparecer O balcão, A ocorrência e Cadastrar equipe.
+6. O cabeçalho também deve mostrar Cadastrar usuário da equipe. Clique no botão e
+   confira que ele abre o mesmo formulário do menu. Esse botão não aparece para
+   equipe comum ou visitante.
 
 Se o ambiente local usa o mesmo banco, a promoção precisa ser feita uma única vez.
 Se usa outro PostgreSQL, execute o comando também nele. Não use o arquivo antigo

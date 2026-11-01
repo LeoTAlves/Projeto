@@ -228,9 +228,17 @@ function App() {
           <h2>{administrador ? 'Administrador' : usuario.tipo === 'visitante' ? 'Perfil da visitante' : 'Equipe do balcão'}</h2>
           <p>{usuario.nome}</p>
         </div>
-        <button className="botao-secundario" onClick={sair}>
-          Sair
-        </button>
+        <div className="acoes-cabecalho">
+          {/* O atalho deixa o cadastro visível sem liberar a função para outros perfis. */}
+          {administrador && (
+            <button type="button" onClick={() => setTela('equipe')}>
+              Cadastrar usuário da equipe
+            </button>
+          )}
+          <button type="button" className="botao-secundario" onClick={sair}>
+            Sair
+          </button>
+        </div>
       </header>
 
       <nav className="navegacao">
