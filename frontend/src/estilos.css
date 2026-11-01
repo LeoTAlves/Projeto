@@ -1,254 +1,169 @@
-﻿html {
-  font-family: Arial, sans-serif;
-  background: #f8fafc;
-  color: #0f172a;
+/* A paleta combina azul profundo, papel claro e dourado para destacar apenas as ações principais. */
+:root {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: #172c40;
+  background: #f7f6f2;
+  font-synthesis: none;
+  --azul: #172c40;
+  --dourado: #efba4b;
+  --borda: #e1e5e5;
+  --apoio: #586a75;
 }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input, select, textarea { font: inherit; }
+button { border: 1px solid transparent; border-radius: 12px; background: var(--azul); color: #fff; font-weight: 650; padding: 0.85rem 1.25rem; cursor: pointer; transition: background 150ms, box-shadow 150ms; min-height: 46px; }
+button:hover:not(:disabled) { background: #28475f; box-shadow: 0 4px 12px #172c4015; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #a66a0c; outline-offset: 3px; }
+h1, h2, h3, h4 { letter-spacing: -0.035em; line-height: 1.2; }
+h3 { font-size: 1.5rem; margin: 0 0 0.65rem; }
+h4 { font-size: 1.1rem; margin: 1.8rem 0 1rem; }
+p { line-height: 1.65; }
+.texto-apoio { color: var(--apoio); margin: 0 0 1.6rem; max-width: 65ch; }
+.sobretitulo { font-size: 0.72rem; font-weight: 750; letter-spacing: 0.13em; text-transform: uppercase; margin: 0 0 0.8rem; color: var(--apoio); }
 
-body {
-  margin: 0;
-  min-height: 100vh;
+/* A assinatura usa texto nativo e um símbolo simples, sem fontes ou imagens externas. */
+.marca { display: flex; gap: 0.75rem; align-items: center; flex-shrink: 0; }
+.marca-simbolo { display: grid; place-items: center; width: 44px; height: 48px; border-radius: 15px 15px 15px 4px; background: var(--dourado); color: var(--azul); font-size: 2rem; font-weight: 850; transform: rotate(-7deg); }
+.marca-nome { display: block; font-size: 2rem; line-height: 1.05; letter-spacing: -0.075em; font-weight: 850; }
+.marca-pontuacao { color: #9c6412; }
+.marca-descricao { display: block; margin-top: 0.35rem; font-size: 0.68rem; color: var(--apoio); letter-spacing: 0.015em; }
+
+/* A entrada apresenta a marca e deixa o formulário em uma superfície tranquila e legível. */
+.pagina-selecao { min-height: 100vh; display: grid; place-items: center; padding: 2rem; }
+.card, .cartao { background: #fff; border: 1px solid var(--borda); border-radius: 20px; padding: clamp(1.25rem, 3vw, 2rem); box-shadow: 0 6px 28px #172c4005; min-width: 0; }
+.pagina-selecao > .card { width: min(470px, 100%); }
+.pagina-acesso { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: stretch; padding: 20px; gap: clamp(2rem, 6vw, 6rem); max-width: 1440px; margin: 0 auto; }
+.apresentacao { padding: clamp(2rem, 5vw, 4.5rem); background: var(--azul); color: #fff; border-radius: 26px; display: flex; flex-direction: column; justify-content: space-between; gap: 3.5rem; position: relative; overflow: hidden; }
+.apresentacao::after { content: '?'; position: absolute; right: -25px; bottom: -90px; font-size: 27rem; font-weight: 850; color: #ffffff04; pointer-events: none; line-height: 1; transform: rotate(15deg); }
+.apresentacao .marca-pontuacao { color: var(--dourado); }
+.apresentacao .marca-descricao { color: #b7c9d2; }
+.apresentacao .sobretitulo { color: #d5e0e4; font-size: 0.65rem; }
+.apresentacao h1 { font-size: clamp(2.8rem, 4.6vw, 4.9rem); line-height: 1.08; letter-spacing: -0.055em; margin: 0 0 1.5rem; font-weight: 750; }
+.apresentacao h1 span { color: var(--dourado); }
+.apresentacao-texto > p:last-child { color: #c0d0d8; max-width: 35ch; font-size: 1rem; }
+.apresentacao-rodape { display: flex; align-items: center; gap: 1rem; font-size: 0.85rem; line-height: 1.6; color: #c0d0d8; position: relative; z-index: 1; }
+.apresentacao-rodape strong { color: #fff; }
+.selo-reencontro { display: grid; place-items: center; width: 46px; height: 46px; border: 1px solid #ffffff30; border-radius: 50%; color: var(--dourado); font-size: 1.4rem; }
+.pagina-acesso > .card-acesso { align-self: center; width: 100%; max-width: 450px; background: transparent; border: 0; box-shadow: none; padding: 2rem 2rem 2rem 0; margin: 2rem 0; }
+.card-acesso h2 { font-size: clamp(1.8rem, 3vw, 2.3rem); margin: 0 0 0.85rem; }
+.card-acesso .texto-apoio { font-size: 0.92rem; margin-bottom: 2rem; }
+.card-acesso .botao-link { display: block; width: 100%; font-size: 0.86rem; }
+.acesso-nota { font-size: 0.75rem; color: var(--apoio); text-align: center; margin-top: 2rem; }
+.botao-link { background: transparent; color: var(--azul); text-decoration: underline; text-underline-offset: 4px; margin-top: 0.75rem; }
+.botao-link:hover:not(:disabled) { background: #eaece9; box-shadow: none; }
+
+/* Cabeçalho, navegação e espaços de conteúdo mantêm a mesma hierarquia em todos os perfis. */
+.app-shell { max-width: 1240px; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 3rem); min-height: 100vh; }
+.cabecalho { display: flex; align-items: center; gap: 1.5rem; padding: 1.7rem 0; border-bottom: 1px solid var(--borda); }
+.identidade-usuario { display: flex; gap: 0.7rem; align-items: center; margin-left: auto; font-size: 0.82rem; min-width: 0; }
+.identidade-usuario > div { min-width: 0; }
+.identidade-usuario strong { display: block; overflow-wrap: anywhere; }
+.identidade-usuario > div > span { display: block; color: var(--apoio); font-size: 0.73rem; margin-top: 4px; }
+.avatar { width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: #e7ede9; font-weight: 750; }
+.acoes-cabecalho { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.acoes-cabecalho button { font-size: 0.78rem; padding: 0.7rem 1rem; }
+.botao-secundario { background: #fff; border-color: #d9dfdf; color: var(--azul); }
+.botao-secundario:hover:not(:disabled) { background: #edf0ed; }
+.boas-vindas { padding: 2.6rem 0 2rem; }
+.boas-vindas .sobretitulo { color: #875c13; }
+.boas-vindas h1 { font-size: clamp(1.7rem, 3.3vw, 2.55rem); margin: 0 0 0.7rem; }
+.boas-vindas > p:last-child { color: var(--apoio); margin: 0; font-size: 0.93rem; }
+.navegacao { display: flex; gap: 0.4rem; padding: 0.4rem; background: #eceeea; border: 1px solid #e2e6e1; border-radius: 14px; width: fit-content; max-width: 100%; flex-wrap: wrap; margin-bottom: 1.75rem; }
+.navegacao button { background: transparent; color: var(--apoio); font-size: 0.85rem; border-radius: 10px; padding: 0.7rem 1.2rem; }
+.navegacao button:hover:not(:disabled) { background: #ffffff80; box-shadow: none; }
+.navegacao button.ativo { background: #fff; color: var(--azul); box-shadow: 0 2px 7px #172c400b; border-color: #e2e6e1; }
+.conteudo-principal { min-height: 330px; }
+.conteudo-principal > .cartao > .formulario { max-width: 740px; }
+.rodape { display: flex; gap: 0.8rem; flex-wrap: wrap; align-items: center; padding: 2rem 0; color: var(--azul); font-size: 0.85rem; font-weight: 750; }
+.rodape span { font-weight: 400; font-size: 0.73rem; color: var(--apoio); }
+
+/* Campos com foco visível e mensagens separadas ajudam a preencher formulários com segurança. */
+.formulario { display: grid; gap: 1.3rem; }
+.formulario label, .cartao label { display: grid; gap: 0.5rem; font-size: 0.85rem; font-weight: 650; }
+input, select, textarea { min-width: 0; width: 100%; border: 1px solid #d4dcdd; border-radius: 11px; padding: 0.85rem 1rem; background: #fff; color: var(--azul); min-height: 48px; font-size: 0.95rem; transition: border-color 150ms; }
+input:hover, select:hover, textarea:hover { border-color: #9daeb7; }
+input::placeholder, textarea::placeholder { color: #75828c; }
+textarea { resize: vertical; line-height: 1.6; }
+.formulario > button { justify-self: start; min-width: 180px; margin-top: 0.25rem; }
+.card-acesso .formulario > button { justify-self: stretch; }
+.cadastro-equipe { min-width: 0; margin: 0; padding: 0; border: 0; }
+.cadastro-equipe legend { margin-bottom: 1.3rem; font-size: 0.85rem; font-weight: 750; }
+.mensagem { margin-top: 1.2rem; padding: 1rem; border: 1px solid #dce5eb; border-radius: 12px; color: #25465c; background: #f0f6fa; font-size: 0.9rem; overflow-wrap: anywhere; }
+.erro { color: #a72d35; }
+.mensagem.erro { background: #fff1f0; border-color: #f0c9c9; }
+.sucesso { color: #216346; }
+.mensagem.sucesso { background: #edf8f1; border-color: #c9e6d5; }
+
+/* Etiquetas com texto e símbolos usam a mesma codificação nas listas, detalhes e ocorrências. */
+.etiqueta { display: inline-flex; align-items: center; gap: 0.4rem; width: fit-content; max-width: 100%; padding: 0.35rem 0.65rem; border-radius: 8px; font-size: 0.73rem; font-weight: 700; line-height: 1.4; border: 1px solid transparent; }
+.etiqueta-simbolo { display: inline-grid; place-items: center; width: 15px; height: 15px; flex-shrink: 0; font-size: 0.8rem; }
+.etiqueta-procurando { background: #fff4d6; color: #795109; border-color: #f0d99b; }
+.etiqueta-retirada { background: #eaf2ff; color: #24508c; border-color: #c7daf4; }
+.etiqueta-devolvido { background: #e8f5ec; color: #226441; border-color: #bfe0ca; }
+.etiqueta-neutra { background: #f0f2f4; color: #526371; border-color: #dce1e5; }
+.legenda-situacoes { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 1.5rem; }
+.legenda-situacoes .etiqueta { font-size: 0.68rem; }
+.situacao-atual, .tipo-ocorrencia { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; border: 1px solid var(--borda); background: #f8faf9; border-radius: 12px; margin: 0; font-size: 0.85rem; }
+.tipo-ocorrencia { background: transparent; border-style: dashed; }
+
+/* A lista usa cartões discretos; somente avisos selecionáveis recebem indicação de clique. */
+.filtro-pavilhao { max-width: 320px; margin-bottom: 1.6rem; }
+.tela-dupla { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 1.4rem; align-items: start; }
+.lista-avisos, .lista-ocorrencias { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.8rem; }
+.lista-avisos li, .lista-ocorrencias li { border: 1px solid var(--borda); border-radius: 14px; padding: 1.15rem; display: grid; gap: 0.7rem; background: #fff; overflow-wrap: anywhere; }
+.lista-balcao { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lista-avisos li.selecionado { border-color: #b88b2e; background: #fffcf4; box-shadow: inset 3px 0 #deb451; }
+.botao-aviso { width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; display: grid; gap: 0.7rem; font-weight: 400; }
+.botao-aviso:hover:not(:disabled) { background: transparent; box-shadow: none; }
+.botao-aviso strong, .lista-avisos > li > strong { font-size: 1rem; line-height: 1.5; }
+.botao-aviso > span:not(.etiqueta):not(.aviso-numero), .aviso-metadados { color: var(--apoio); font-size: 0.8rem; line-height: 1.6; }
+.aviso-topo { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.aviso-numero { font-size: 0.68rem; color: var(--apoio); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 700; }
+.detalhe > p { color: var(--apoio); overflow-wrap: anywhere; }
+.detalhe > p > strong { color: var(--azul); }
+.lista-ocorrencias li { background: #fafbf9; font-size: 0.88rem; }
+.lista-ocorrencias small { color: var(--apoio); }
+.paginacao { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0.9rem; margin-top: 1.5rem; padding-top: 1.3rem; border-top: 1px solid var(--borda); }
+.paginacao button { background: #fff; border-color: var(--borda); color: var(--azul); font-size: 0.78rem; min-height: 40px; padding: 0.55rem 0.85rem; }
+.paginacao button:hover:not(:disabled) { background: #edf1ed; }
+.paginacao span { color: var(--apoio); font-size: 0.8rem; }
+
+/* No celular, a marca fica compacta, os cartões ocupam uma coluna e os controles quebram linha. */
+@media (max-width: 950px) {
+  .cabecalho { flex-wrap: wrap; }
+  .acoes-cabecalho { margin-left: auto; }
+  .pagina-acesso { gap: 2rem; }
+  .apresentacao { padding: 2rem; }
+  .pagina-acesso > .card-acesso { padding-right: 1rem; }
 }
-
-* {
-  box-sizing: border-box;
+@media (max-width: 700px) {
+  .pagina-acesso { display: block; padding: 1rem; }
+  .apresentacao { padding: 1.6rem; gap: 1.6rem; border-radius: 20px; }
+  .apresentacao h1 { font-size: 2.3rem; margin-bottom: 0.7rem; }
+  .apresentacao h1 br { display: none; }
+  .apresentacao-texto > p:last-child { font-size: 0.85rem; max-width: none; margin-bottom: 0; }
+  .apresentacao .sobretitulo, .apresentacao-rodape { display: none; }
+  .apresentacao::after { display: none; }
+  .pagina-acesso > .card-acesso { max-width: none; padding: 1.5rem 0.5rem; margin: 0.5rem 0 0; }
+  .card-acesso h2 { font-size: 1.8rem; }
+  .tela-dupla, .lista-balcao { grid-template-columns: minmax(0, 1fr); }
+  .cabecalho { gap: 1rem; padding: 1.2rem 0; }
+  .cabecalho .marca-descricao { display: none; }
+  .marca-nome { font-size: 1.75rem; }
+  .marca-simbolo { width: 35px; height: 40px; font-size: 1.6rem; }
+  .identidade-usuario { max-width: 48%; }
+  .identidade-usuario .avatar { display: none; }
+  .acoes-cabecalho { width: 100%; margin: 0; }
+  .acoes-cabecalho > button:first-child:not(.botao-secundario) { flex: 1; }
+  .acoes-cabecalho > .botao-secundario { margin-left: auto; }
+  .boas-vindas { padding: 1.7rem 0; }
+  .navegacao { width: 100%; }
+  .navegacao button { flex: 1; padding: 0.65rem 0.7rem; font-size: 0.78rem; }
+  .formulario > button { width: 100%; }
+  .legenda-situacoes { gap: 0.4rem; }
 }
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
-
-button {
-  border: none;
-  border-radius: 12px;
-  background: #0f172a;
-  color: #fff;
-  cursor: pointer;
-  padding: 0.8rem 1.2rem;
-  transition: opacity 0.2s ease;
-}
-
-button:hover {
-  opacity: 0.92;
-}
-
-button:disabled {
-  opacity: 0.65;
-  cursor: wait;
-}
-
-.pagina-selecao,
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-}
-
-.app-shell {
-  flex-direction: column;
-  align-items: stretch;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.card,
-.cartao {
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
-  padding: 1.5rem;
-}
-
-.pagina-selecao .card {
-  width: min(500px, 100%);
-  text-align: center;
-}
-
-.botao-link {
-  margin-top: 0.75rem;
-  padding: 0.25rem 0;
-  background: transparent;
-  color: #0f172a;
-  text-decoration: underline;
-}
-
-.sucesso {
-  color: #166534;
-}
-
-.botoes-perfil {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.cabecalho {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  gap: 1rem;
-}
-
-.titulo-pequeno {
-  margin: 0;
-  color: #f59e0b;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-/* O cadastro do administrador e a saída permanecem acessíveis no computador e no celular. */
-.acoes-cabecalho {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.navegacao {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
-}
-
-.navegacao button {
-  background: #cbd5e1;
-  color: #0f172a;
-}
-
-.navegacao button.ativo {
-  background: #f59e0b;
-  color: #0f172a;
-}
-
-.botao-secundario {
-  background: #e2e8f0;
-  color: #0f172a;
-}
-
-.conteudo-principal {
-  display: block;
-}
-
-.formulario {
-  display: grid;
-  gap: 1rem;
-}
-
-/* Mantém o formulário de equipe dentro do cartão também em telas pequenas. */
-.cadastro-equipe {
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.cadastro-equipe legend {
-  margin-bottom: 1rem;
-  font-weight: 700;
-}
-
-.formulario label,
-.cartao label {
-  display: grid;
-  gap: 0.4rem;
-  font-weight: 600;
-}
-
-input,
-select,
-textarea {
-  width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 0.8rem 0.9rem;
-  background: #fff;
-}
-
-textarea {
-  resize: vertical;
-}
-
-.mensagem {
-  margin-top: 1rem;
-  color: #0f172a;
-  font-weight: 600;
-}
-
-.erro {
-  color: #b91c1c;
-}
-
-.tela-dupla {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: 1rem;
-}
-
-.lista-avisos,
-.lista-ocorrencias {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.lista-avisos li,
-.lista-ocorrencias li {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1rem;
-  display: grid;
-  gap: 0.2rem;
-  background: #f8fafc;
-}
-
-.lista-avisos li.selecionado {
-  border-color: #f59e0b;
-  background: #fff7ed;
-}
-
-.lista-avisos li {
-  cursor: pointer;
-}
-
-.botao-aviso {
-  width: 100%;
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  display: grid;
-  gap: 0.2rem;
-}
-
-.lista-avisos li > .botao-aviso:hover {
-  opacity: 1;
-}
-
-@media (max-width: 800px) {
-  .tela-dupla {
-    grid-template-columns: 1fr;
-  }
-
-  .cabecalho {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-.paginacao {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1rem;
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
 }

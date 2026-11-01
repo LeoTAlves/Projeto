@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { listarAvisos, buscarAviso } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
+import Situacao, { LegendaSituacoes } from '../../../componentes/Situacao';
 
 // A tela de meus avisos combina a lista do visitante com o detalhe de cada aviso e suas ocorrências.
 function MeusAvisos({ visitanteId }) {
@@ -52,6 +53,8 @@ function MeusAvisos({ visitanteId }) {
     <section className="tela-dupla">
       <div className="cartao lista">
         <h3>Meus avisos</h3>
+        <p className="texto-apoio">Acompanhe o caminho de volta dos seus objetos.</p>
+        <LegendaSituacoes />
         {avisos.length === 0 ? (
           <p>Nenhum aviso registrado.</p>
         ) : (
@@ -59,9 +62,10 @@ function MeusAvisos({ visitanteId }) {
             {avisos.map((aviso) => (
               <li key={aviso.id} className={avisoSelecionado && avisoSelecionado.id === aviso.id ? 'selecionado' : ''}>
                 <button type="button" className="botao-aviso" onClick={() => abrirAviso(aviso.id)}>
+                  <span className="aviso-numero">Aviso #{aviso.id}</span>
                   <strong>{aviso.descricao}</strong>
                   <span>{aviso.pavilhao}</span>
-                  <small>{aviso.situacao}</small>
+                  <Situacao valor={aviso.situacao} />
                 </button>
               </li>
             ))}
@@ -75,11 +79,12 @@ function MeusAvisos({ visitanteId }) {
           <p>Carregando o aviso e suas ocorrências...</p>
         ) : avisoSelecionado ? (
           <>
+            <p className="sobretitulo">Aviso #{avisoSelecionado.id}</p>
             <h3>Detalhes do aviso</h3>
             <p><strong>Descrição:</strong> {avisoSelecionado.descricao}</p>
             <p><strong>Pavilhão:</strong> {avisoSelecionado.pavilhao}</p>
             <p><strong>Noite:</strong> {avisoSelecionado.noite}</p>
-            <p><strong>Situação:</strong> {avisoSelecionado.situacao}</p>
+            <p className="situacao-atual"><strong>Situação</strong><Situacao valor={avisoSelecionado.situacao} /></p>
 
             <h4>Ocorrências</h4>
             {avisoSelecionado.ocorrencias.length === 0 ? (
@@ -88,7 +93,7 @@ function MeusAvisos({ visitanteId }) {
               <ul className="lista-ocorrencias">
                 {avisoSelecionado.ocorrencias.map((ocorrencia) => (
                   <li key={ocorrencia.id}>
-                    <strong>{ocorrencia.tipo}</strong>
+                    <Situacao valor={ocorrencia.tipo} />
                     <span>{ocorrencia.descricao}</span>
                     <small>{ocorrencia.data}</small>
                   </li>

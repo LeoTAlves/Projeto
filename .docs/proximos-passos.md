@@ -1,5 +1,9 @@
 # Próximos passos
 
+- Revisar visualmente o novo Cadê!? no computador e no celular e publicar o frontend.
+  O build passou e o contraste das etiquetas foi conferido. A prévia no navegador
+  não ficou disponível nesta sessão. Conferir login, cadastro, os três perfis,
+  as três situações dos avisos e os tipos no histórico de ocorrências.
 - Publicar backend e frontend com suporte ao administrador. Criar a conta escolhida
   pelo cadastro público, caso ainda não exista com senha, e executar
   `docs/liberar_admin.sql` no Supabase. Esse comando substitui a promoção anterior

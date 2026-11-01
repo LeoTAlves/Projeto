@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { criarOcorrencia, listarAvisos } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
+import Situacao from '../../../componentes/Situacao';
 
 // A tela de ocorrência registra um achado ou uma devolução em um aviso específico da equipe.
 function Ocorrencia() {
@@ -72,6 +73,7 @@ function Ocorrencia() {
   return (
     <section className="cartao">
       <h3>A ocorrência</h3>
+      <p className="texto-apoio">Um objeto encontrado ou uma devolução: registre o próximo passo deste aviso.</p>
 
       {avisos.length === 0 ? (
         <p>Nenhum aviso disponível para registrar ocorrência.</p>
@@ -85,7 +87,7 @@ function Ocorrencia() {
               ))}
             </select>
           </label>
-          {avisoSelecionado && <p>Situação atual: <strong>{avisoSelecionado.situacao}</strong></p>}
+          {avisoSelecionado && <div className="situacao-atual"><span>Situação atual</span><Situacao valor={avisoSelecionado.situacao} /></div>}
 
           <label>
             Tipo
@@ -94,6 +96,8 @@ function Ocorrencia() {
               <option value="devolucao">Devolução</option>
             </select>
           </label>
+
+          <div className="tipo-ocorrencia"><span>Você está registrando</span><Situacao valor={tipo} /></div>
 
           <label>
             Descrição da ocorrência
@@ -115,7 +119,7 @@ function Ocorrencia() {
       )}
 
       <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando || enviando} aoMudar={setPagina} />
-      {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem'} role="status">{mensagem}</p>}
+      {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem sucesso'} role="status">{mensagem}</p>}
     </section>
   );
 }

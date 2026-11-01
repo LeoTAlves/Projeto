@@ -5,6 +5,7 @@ import MeusAvisos from './telas/pessoa/meus-avisos/MeusAvisos';
 import Balcao from './telas/gestao/balcao/Balcao';
 import Ocorrencia from './telas/gestao/ocorrencia/Ocorrencia';
 import CadastrarEquipe from './telas/gestao/equipe/CadastrarEquipe';
+import Marca from './componentes/Marca';
 
 // O login identifica o usuário pelo token e escolhe a tela conforme o grupo retornado.
 function App() {
@@ -110,8 +111,8 @@ function App() {
     return (
       <div className="pagina-selecao">
         <div className="card">
-          <h1>Cadê, achados e perdidos</h1>
-          <p>Validando a sessão...</p>
+          <Marca />
+          <p role="status">Preparando seu espaço...</p>
         </div>
       </div>
     );
@@ -119,10 +120,23 @@ function App() {
 
   if (!usuario) {
     return (
-      <div className="pagina-selecao">
-        <div className="card">
-          <h1>Cadê, achados e perdidos</h1>
-          <p>{modoCadastro ? 'Crie sua conta de visitante para acessar o sistema.' : 'Entre com e-mail e senha para acessar o sistema.'}</p>
+      <div className="pagina-selecao pagina-acesso">
+        <aside className="apresentacao">
+          <Marca destaque />
+          <div className="apresentacao-texto">
+            <p className="sobretitulo">Um ponto de encontro para o que se perdeu</p>
+            <h1>Perdeu algo?<br />{' '}O reencontro<br />{' '}começa <span>aqui.</span></h1>
+            <p>Registre sua perda, acompanhe os avisos e conte com a equipe do balcão para encontrar o caminho de volta.</p>
+          </div>
+          <div className="apresentacao-rodape">
+            <span className="selo-reencontro" aria-hidden="true">↗</span>
+            <span>Menos procura.<br /><strong>Mais reencontros.</strong></span>
+          </div>
+        </aside>
+        <div className="card card-acesso">
+          <p className="sobretitulo">Seu espaço no Cadê!?</p>
+          <h2>{modoCadastro ? 'Vamos criar sua conta?' : 'Que bom ter você aqui.'}</h2>
+          <p className="texto-apoio">{modoCadastro ? 'Cadastre-se como visitante para registrar e acompanhar suas perdas.' : 'Entre para acompanhar seus avisos ou atender no balcão.'}</p>
 
           <form onSubmit={modoCadastro ? cadastrar : entrar} className="formulario">
             {modoCadastro && (
@@ -197,6 +211,7 @@ function App() {
           >
             {modoCadastro ? 'Já tem uma conta? Entrar' : 'Não tem uma conta? Criar conta'}
           </button>
+          <p className="acesso-nota">Conectando pessoas ao que faz falta.</p>
         </div>
       </div>
     );
@@ -223,10 +238,13 @@ function App() {
   return (
     <div className="app-shell">
       <header className="cabecalho">
-        <div>
-          <p className="titulo-pequeno">Cartilha 5</p>
-          <h2>{administrador ? 'Administrador' : usuario.tipo === 'visitante' ? 'Perfil da visitante' : 'Equipe do balcão'}</h2>
-          <p>{usuario.nome}</p>
+        <Marca />
+        <div className="identidade-usuario">
+          <span className="avatar" aria-hidden="true">{usuario.nome?.trim().charAt(0).toUpperCase()}</span>
+          <div>
+            <strong>{usuario.nome}</strong>
+            <span>{administrador ? 'Administrador' : usuario.tipo === 'visitante' ? 'Visitante' : 'Equipe do balcão'}</span>
+          </div>
         </div>
         <div className="acoes-cabecalho">
           {/* O atalho deixa o cadastro visível sem liberar a função para outros perfis. */}
@@ -241,11 +259,18 @@ function App() {
         </div>
       </header>
 
-      <nav className="navegacao">
+      <section className="boas-vindas" aria-label="Seu espaço">
+        <p className="sobretitulo">{usuario.tipo === 'visitante' ? 'Seu ponto de reencontro' : 'Central de atendimento'}</p>
+        <h1>{usuario.tipo === 'visitante' ? 'Vamos encontrar o que faz falta.' : 'Cada objeto tem uma história de volta.'}</h1>
+        <p>{usuario.tipo === 'visitante' ? 'Registre uma perda e acompanhe cada novidade por aqui.' : 'Organize os avisos, registre os achados e ajude a completar reencontros.'}</p>
+      </section>
+
+      <nav className="navegacao" aria-label="Telas do sistema">
         {telasAtuais.map((item) => (
           <button
             key={item.id}
             className={tela === item.id ? 'ativo' : ''}
+            aria-current={tela === item.id ? 'page' : undefined}
             onClick={() => setTela(item.id)}
           >
             {item.nome}
@@ -260,6 +285,7 @@ function App() {
         {podeOperarBalcao && tela === 'ocorrencia' && <Ocorrencia />}
         {administrador && tela === 'equipe' && <CadastrarEquipe />}
       </main>
+      <footer className="rodape">Cadê!? <span>Achados, perdidos e reencontros.</span></footer>
     </div>
   );
 }

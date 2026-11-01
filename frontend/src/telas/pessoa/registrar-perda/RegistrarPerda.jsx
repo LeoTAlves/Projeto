@@ -39,6 +39,7 @@ function RegistrarPerda({ visitanteId }) {
   return (
     <section className="cartao">
       <h3>Registrar perda</h3>
+      <p className="texto-apoio">Conte o que você perdeu. Quanto mais detalhes, mais fácil reconhecer.</p>
       <form onSubmit={enviarFormulario} className="formulario">
         <label>
           Descrição do objeto
@@ -77,7 +78,7 @@ function RegistrarPerda({ visitanteId }) {
         </button>
       </form>
 
-      {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem'} role="status">{mensagem}</p>}
+      {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem sucesso'} role="status">{mensagem}</p>}
     </section>
   );
 }

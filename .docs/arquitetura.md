@@ -16,6 +16,8 @@
 - A tela `Balcao.jsx` lista avisos e filtra por pavilhão.
 - A tela `Ocorrencia.jsx` registra achados e devoluções.
 - A tela `CadastrarEquipe.jsx` permite ao administrador criar membros do balcão.
+- `Marca.jsx` aplica o nome Cadê!? na entrada e no cabeçalho. `Situacao.jsx`
+  centraliza etiquetas com cor, símbolo e texto nas listas e ocorrências.
 - O administrador acessa esse formulário pelo menu Cadastrar equipe ou pelo botão
   Cadastrar usuário da equipe no cabeçalho.
 - `POST /usuarios` exige o perfil `admin`. O cadastro público sempre cria visitantes.

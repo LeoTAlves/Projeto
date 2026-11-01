@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { listarAvisos } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
+import Situacao, { LegendaSituacoes } from '../../../componentes/Situacao';
 
 // A tela do balcão filtra avisos por pavilhão e mostra o histórico rápido para a equipe.
 function Balcao() {
@@ -22,7 +23,9 @@ function Balcao() {
   return (
     <section className="cartao">
       <h3>O balcão</h3>
-      <label>
+      <p className="texto-apoio">Um lugar para acompanhar cada aviso e o próximo reencontro.</p>
+      <LegendaSituacoes />
+      <label className="filtro-pavilhao">
         Filtrar por pavilhão
         <select value={pavilhao} onChange={(evento) => { setPavilhao(evento.target.value); setPagina(1); }}>
           <option value="">Todos os pavilhões</option>
@@ -43,9 +46,9 @@ function Balcao() {
           <ul className="lista-avisos lista-balcao">
             {avisos.map((aviso) => (
               <li key={aviso.id}>
+                <div className="aviso-topo"><span className="aviso-numero">Aviso #{aviso.id}</span><Situacao valor={aviso.situacao} /></div>
                 <strong>{aviso.descricao}</strong>
-                <span>{aviso.pavilhao} · Noite {aviso.noite} · Visitante {aviso.visitante_id}</span>
-                <small>{aviso.situacao}</small>
+                <span className="aviso-metadados">{aviso.pavilhao} · Noite {aviso.noite} · Visitante {aviso.visitante_id}</span>
               </li>
             ))}
           </ul>

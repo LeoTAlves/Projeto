@@ -1,5 +1,16 @@
 # Decisões
 
+## Identidade e leitura das situações
+
+- Pedido do responsável: adotar Cadê!? e melhorar o visual sem excesso de elementos.
+- A interface usa azul profundo, dourado e fundo claro, com tipografia local,
+  cartões discretos e disposição adaptada ao celular.
+- `Marca.jsx` centraliza o nome. `Situacao.jsx` identifica situações com cor,
+  texto e símbolo: procurando em âmbar, retirada em azul e devolvido em verde.
+- Achado e devolução usam o mesmo padrão no histórico e na prévia do formulário.
+- A mudança é de apresentação. Não altera dados, rotas, autenticação ou permissões.
+- Paleta e aplicação registradas em `docs/styleguide/README.md`.
+
 ## Perfil administrador
 
 - Pedido do responsável: a conta indicada em `docs/liberar_admin.sql` será admin
