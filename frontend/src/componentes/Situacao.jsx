@@ -4,6 +4,7 @@ function Situacao({ valor }) {
     procurando: { classe: 'procurando', texto: 'Procurando', simbolo: '?' },
     'aguardando retirada': { classe: 'retirada', texto: 'Aguardando retirada', simbolo: '↗' },
     devolvido: { classe: 'devolvido', texto: 'Devolvido', simbolo: '✓' },
+    triado: { classe: 'neutra', texto: 'Triado', simbolo: '✓' },
     'objeto achado': { classe: 'retirada', texto: 'Objeto achado', simbolo: '↗' },
     devolucao: { classe: 'devolvido', texto: 'Devolução', simbolo: '✓' },
   };

@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+from hashlib import sha256
+from hmac import new as hmac_novo
 
 import jwt
 from fastapi import Depends
@@ -34,3 +36,11 @@ def gerar_hash(senha: str):
 
 def verificar_senha(senha: str, senha_hash: str):
     return hasher.verify(senha, senha_hash)
+
+
+# O segredo do servidor vincula o código ao aviso e ao dono sem gravar o código no banco.
+def gerar_codigo_retirada(aviso_id, visitante_id):
+    mensagem = f"cade:retirada:v1:{aviso_id}:{visitante_id}".encode()
+    chave = configuracao["chave_do_token"].encode()
+    codigo = hmac_novo(chave, mensagem, sha256).hexdigest()[:16].upper()
+    return "-".join(codigo[i:i + 4] for i in range(0, 16, 4))

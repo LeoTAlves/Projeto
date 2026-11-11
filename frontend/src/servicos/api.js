@@ -112,6 +112,43 @@ export async function buscarAviso(avisoId) {
   return executarRequisicao(URL_DA_API + "/avisos/" + avisoId);
 }
 
+export function buscarCorrespondencias(avisoId, busca) {
+  const parametros = busca ? '?' + new URLSearchParams({ busca }) : '';
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/triagem" + parametros);
+}
+
+export function registrarAchadosDaTriagem(avisoId, avisoIds) {
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/triagem", {
+    method: 'POST',
+    body: JSON.stringify({ aviso_ids: avisoIds }),
+  });
+}
+
+export function registrarObjetoBalcao(dados) {
+  return executarRequisicao(URL_DA_API + "/avisos/balcao", {
+    method: 'POST',
+    body: JSON.stringify(dados),
+  });
+}
+
+export function listarVisitantes() {
+  return executarRequisicao(URL_DA_API + "/usuarios")
+    .then((usuarios) => usuarios.filter((usuario) => usuario.tipo === 'visitante'));
+}
+
+export function vincularVisitante(avisoId, visitanteId) {
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/visitante", {
+    method: 'PATCH',
+    body: JSON.stringify({ visitante_id: visitanteId }),
+  });
+}
+
+export function consultarCodigoRetirada(avisoId) {
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/codigo-retirada", {
+    cache: 'no-store',
+  });
+}
+
 // Envia ao back os dados validados do novo aviso da pessoa visitante.
 export async function criarAviso(dados) {
   return executarRequisicao(URL_DA_API + "/avisos", {

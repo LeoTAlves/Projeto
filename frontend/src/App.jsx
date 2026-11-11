@@ -9,6 +9,12 @@ import Marca from './componentes/Marca';
 
 // O login identifica o usuário pelo token e escolhe a tela conforme o grupo retornado.
 function App() {
+  const [tema, setTema] = useState(() => {
+    const salvo = localStorage.getItem('cade-tema');
+    if (salvo === 'claro' || salvo === 'escuro') return salvo;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro';
+  });
+  const [mostrarSenha, setMostrarSenha] = useState(false);
   const [usuario, setUsuario] = useState(null);
   const [tela, setTela] = useState('registrar');
   const [nomeCadastro, setNomeCadastro] = useState('');
@@ -21,6 +27,19 @@ function App() {
   const [carregandoSessao, setCarregandoSessao] = useState(true);
   const [carregandoLogin, setCarregandoLogin] = useState(false);
   const [carregandoCadastro, setCarregandoCadastro] = useState(false);
+
+  // O tema acompanha a pessoa na entrada e nas telas autenticadas.
+  useEffect(() => {
+    document.documentElement.dataset.tema = tema;
+    localStorage.setItem('cade-tema', tema);
+  }, [tema]);
+
+  const botaoTema = (
+    <button type="button" className="botao-secundario botao-tema"
+      onClick={() => setTema(tema === 'claro' ? 'escuro' : 'claro')}>
+      {tema === 'claro' ? '☾ Tema escuro' : '☀ Tema claro'}
+    </button>
+  );
 
   const carregarUsuario = async () => {
     setCarregandoSessao(true);
@@ -96,6 +115,7 @@ function App() {
     setMensagemCadastro('');
     setSenha('');
     setConfirmarSenha('');
+    setMostrarSenha(false);
   };
 
   const sair = () => {
@@ -105,6 +125,7 @@ function App() {
     setEmail('');
     setSenha('');
     setErroLogin('');
+    setMostrarSenha(false);
   };
 
   if (carregandoSessao) {
@@ -134,6 +155,7 @@ function App() {
           </div>
         </aside>
         <div className="card card-acesso">
+          <div className="tema-acesso">{botaoTema}</div>
           <p className="sobretitulo">Seu espaço no Cadê!?</p>
           <h2>{modoCadastro ? 'Vamos criar sua conta?' : 'Que bom ter você aqui.'}</h2>
           <p className="texto-apoio">{modoCadastro ? 'Cadastre-se como visitante para registrar e acompanhar suas perdas.' : 'Entre para acompanhar seus avisos ou atender no balcão.'}</p>
@@ -166,18 +188,32 @@ function App() {
               />
             </label>
 
-            <label>
-              Senha
-              <input
-                required
-                type="password"
-                minLength={modoCadastro ? 8 : undefined}
-                value={senha}
-                onChange={(evento) => setSenha(evento.target.value)}
-                placeholder="Sua senha"
-                autoComplete={modoCadastro ? 'new-password' : 'current-password'}
-              />
-            </label>
+            <div className="campo-senha">
+              <label htmlFor="senha-acesso">Senha</label>
+              <div className="campo-senha-controle">
+                <input
+                  id="senha-acesso"
+                  required
+                  type={mostrarSenha ? 'text' : 'password'}
+                  minLength={modoCadastro ? 8 : undefined}
+                  value={senha}
+                  onChange={(evento) => setSenha(evento.target.value)}
+                  placeholder="Sua senha"
+                  autoComplete={modoCadastro ? 'new-password' : 'current-password'}
+                />
+                <button type="button" className="botao-olho" aria-controls="senha-acesso"
+                  aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                  title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                  onClick={() => setMostrarSenha(!mostrarSenha)}>
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" />
+                    <circle cx="12" cy="12" r="2.5" />
+                    {mostrarSenha && <path d="m3 3 18 18" />}
+                  </svg>
+                </button>
+              </div>
+            </div>
 
             {modoCadastro && (
               <label>
@@ -224,6 +260,7 @@ function App() {
 
   const telasEquipe = [
     { id: 'balcao', nome: 'O balcão' },
+    { id: 'registrar-balcao', nome: 'Registrar objeto' },
     { id: 'ocorrencia', nome: 'A ocorrência' },
   ];
 
@@ -247,6 +284,7 @@ function App() {
           </div>
         </div>
         <div className="acoes-cabecalho">
+          {botaoTema}
           {/* O atalho deixa o cadastro visível sem liberar a função para outros perfis. */}
           {administrador && (
             <button type="button" onClick={() => setTela('equipe')}>
@@ -282,6 +320,7 @@ function App() {
         {usuario.tipo === 'visitante' && tela === 'registrar' && <RegistrarPerda visitanteId={usuario.id} />}
         {usuario.tipo === 'visitante' && tela === 'meus' && <MeusAvisos visitanteId={usuario.id} />}
         {podeOperarBalcao && tela === 'balcao' && <Balcao />}
+        {podeOperarBalcao && tela === 'registrar-balcao' && <RegistrarPerda peloBalcao />}
         {podeOperarBalcao && tela === 'ocorrencia' && <Ocorrencia />}
         {administrador && tela === 'equipe' && <CadastrarEquipe />}
       </main>

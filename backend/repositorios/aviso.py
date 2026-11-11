@@ -16,6 +16,17 @@ def buscar_aviso_por_id(sessao, aviso_id, visitante_id=None):
     return sessao.scalar(consulta)
 
 
+# Serializa o vínculo e a devolução quando dois atendentes abrem o mesmo aviso.
+def bloquear_aviso(sessao, aviso_id):
+    consulta = select(Aviso).where(Aviso.id == aviso_id).with_for_update()
+    return sessao.scalar(consulta)
+
+
+def bloquear_avisos(sessao, ids):
+    consulta = select(Aviso).where(Aviso.id.in_(ids)).order_by(Aviso.id).with_for_update()
+    return {aviso.id: aviso for aviso in sessao.scalars(consulta)}
+
+
 # WHERE, ORDER BY, LIMIT e OFFSET são executados no MySQL, antes de trazer as linhas.
 def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1):
     consulta = select(Aviso).order_by(Aviso.noite, Aviso.id)
@@ -34,3 +45,16 @@ def criar_aviso(sessao, dados):
     sessao.commit()
     sessao.refresh(aviso)
     return aviso
+
+
+# A triagem percorre os avisos de perda em aberto, além da página exibida no balcão.
+def percorrer_perdas_abertas(sessao):
+    consulta = select(Aviso).where(
+        Aviso.situacao == "procurando", Aviso.visitante_id.is_not(None)
+    ).execution_options(yield_per=100)
+    return sessao.scalars(consulta)
+
+
+def listar_avisos_para_sugestao(sessao):
+    consulta = select(Aviso).order_by(Aviso.id)
+    return sessao.scalars(consulta).all()

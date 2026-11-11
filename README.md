@@ -40,6 +40,12 @@ URL_DO_BANCO=mysql+mysqlconnector://USUARIO:SENHA@localhost:3306/cade
 
 Substitua `USUARIO` e `SENHA` pelas credenciais locais. Caracteres reservados na senha precisam de codificação na URL: por exemplo, `@` vira `%40`. O arquivo `.env` está fora do Git; não coloque a senha no README nem em `.env.exemplo`.
 
+Para habilitar as sugestões de correspondência por IA, preencha
+`GEMINI_API_KEY`, `OPENROUTER_API_KEY` e `ANTHROPIC_API_KEY` no mesmo
+`backend/.env`. O backend usa Gemini primeiro, OpenRouter como primeira reserva
+e Claude como segunda reserva. Sem as chaves, os demais recursos do backend
+continuam funcionando; configure as chaves antes de usar a rota de sugestão.
+
 Com o ambiente ativado:
 
 ```powershell
@@ -112,9 +118,43 @@ A primeira conta administradora é ativada com [docs/liberar_admin.sql](docs/lib
 
 As quatro telas continuam disponíveis. Balcão, Meus avisos e seleção do aviso na tela de ocorrência possuem controles para navegar entre as páginas.
 
+## Registro pelo balcão e retirada
+
+Para um banco já existente, aplique `alembic upgrade head` na pasta `backend`
+antes de publicar o backend atualizado. A revisão `9ab64c2f018e` permite que
+`avisos.visitante_id` fique vazio enquanto a equipe identifica o dono.
+
+1. Como equipe ou administrador, abra **Registrar objeto** e informe a descrição,
+   o pavilhão e a data. O aviso inicia em **Aguardando retirada**.
+2. Em **A ocorrência**, selecione o aviso. Após conferir a descrição e os detalhes
+   com a pessoa, vincule o aviso à conta de visitante dela.
+3. Na conta do visitante, abra o aviso em **Meus avisos** e clique em **Mostrar código**.
+4. No balcão, selecione **Devolução**, preencha o código apresentado e registre.
+   Código incorreto ou ausente mantém o aviso aguardando retirada. O código deixa
+   de ser consultável e reutilizável após a devolução.
+
+Avisos criados pelo visitante seguem disponíveis. Quando a equipe registra o
+achado de um aviso já vinculado, o código passa a aparecer em **Meus avisos**.
+
+## Sugestões de correspondência por IA
+
+A equipe e administradores podem chamar `POST /ia/sugestoes`, autenticados, com
+categoria, cor, marca, modelo e características distintivas do objeto encontrado.
+Pavilhão, turno e data são opcionais e servem de contexto; são necessárias pelo
+menos três características do objeto. O endpoint sugere avisos com pelo menos
+três características compatíveis, prioriza `procurando` e identifica avisos
+`devolvido` como bloqueados. A resposta é apenas uma sugestão: a conferência e
+o registro continuam no fluxo manual de ocorrências.
+
+Se os provedores falharem, a API responde `503`; use os filtros e a triagem
+manual. As descrições são enviadas aos provedores configurados, sem dados de
+visitantes, e o modelo não tem acesso ao banco nem ferramentas de escrita.
+
 ## Estrutura e responsabilidades
 
 - `backend/configuracao.py`: único arquivo que lê o ambiente.
+- `backend/ia/`: integração com Gemini, OpenRouter e Claude, fallback e formatação/validação da sugestão.
+- `backend/rotas/ia.py`: endpoint autenticado de sugestão; não grava ocorrências.
 - `backend/banco.py`: conexão, fábrica de sessões, Base e entrega da sessão.
 - `backend/modelos/`: três tabelas descritas com SQLAlchemy.
 - `backend/esquemas/`: validação da entrada e formato da resposta.

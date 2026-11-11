@@ -2,7 +2,8 @@
 :root {
   font-family: 'Segoe UI', Arial, sans-serif;
   color: #172c40;
-  background: #f7f6f2;
+  background: #e9eef3;
+  color-scheme: light;
   font-synthesis: none;
   --azul: #172c40;
   --dourado: #efba4b;
@@ -167,3 +168,82 @@ textarea { resize: vertical; line-height: 1.6; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
 }
+
+/* O fundo mais definido separa os cartões. Os controles se ajustam no celular. */
+.tema-acesso { display: flex; justify-content: flex-end; margin-bottom: 1.25rem; }
+.botao-tema { font-size: 0.82rem; }
+.campo-senha, .painel-retirada { display: grid; gap: 0.55rem; }
+.campo-senha-controle { position: relative; }
+.campo-senha-controle input { padding-right: 3.5rem; }
+.campo-senha-controle .botao-olho {
+  position: absolute;
+  inset: 2px 3px 2px auto;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--apoio);
+}
+.campo-senha-controle .botao-olho:hover:not(:disabled) {
+  background: transparent;
+  color: var(--azul);
+  box-shadow: none;
+}
+.painel-retirada { padding: 1rem; border: 1px solid var(--borda); border-radius: 12px; margin-top: 0.75rem; }
+.painel-retirada p { margin: 0; }
+.painel-retirada button { justify-self: start; }
+.cartao .triagem-selecao { display: flex; align-items: center; }
+.triagem-selecao input { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0 0.4rem 0 0; }
+.codigo-retirada { font-size: 1.1rem; font-weight: 700; overflow-wrap: anywhere; }
+
+/* Mantém textos, controles e etiquetas legíveis sobre superfícies escuras. */
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+  color: #f0f5fa;
+  background: #0e1826;
+  --azul: #f0f5fa;
+  --borda: #40526a;
+  --apoio: #bdcbd9;
+}
+[data-tema="escuro"] .card,
+[data-tema="escuro"] .cartao,
+[data-tema="escuro"] .lista-avisos li,
+[data-tema="escuro"] .lista-ocorrencias li { background: #1b293b; }
+[data-tema="escuro"] .pagina-acesso > .card-acesso { background: transparent; }
+[data-tema="escuro"] .apresentacao { background: #243b54; }
+[data-tema="escuro"] .marca-simbolo { color: #172c40; }
+[data-tema="escuro"] .marca-pontuacao,
+[data-tema="escuro"] .boas-vindas .sobretitulo { color: #efba4b; }
+[data-tema="escuro"] button { background: #efba4b; color: #172c40; }
+[data-tema="escuro"] button:hover:not(:disabled) { background: #f7ce73; }
+[data-tema="escuro"] .botao-secundario,
+[data-tema="escuro"] .navegacao,
+[data-tema="escuro"] .paginacao button,
+[data-tema="escuro"] .situacao-atual,
+[data-tema="escuro"] input,
+[data-tema="escuro"] select,
+[data-tema="escuro"] textarea { background: #243449; color: #f0f5fa; border-color: var(--borda); }
+[data-tema="escuro"] input::placeholder,
+[data-tema="escuro"] textarea::placeholder { color: #afbed0; }
+[data-tema="escuro"] .botao-secundario:hover:not(:disabled),
+[data-tema="escuro"] .paginacao button:hover:not(:disabled) { background: #354b65; }
+[data-tema="escuro"] .botao-link,
+[data-tema="escuro"] .botao-aviso,
+[data-tema="escuro"] .navegacao button { background: transparent; color: #f0f5fa; }
+[data-tema="escuro"] .botao-link:hover:not(:disabled),
+[data-tema="escuro"] .botao-aviso:hover:not(:disabled),
+[data-tema="escuro"] .navegacao button:hover:not(:disabled) { background: #354b65; }
+[data-tema="escuro"] .navegacao button.ativo { background: #405875; border-color: #7890aa; }
+[data-tema="escuro"] .avatar { background: #354b65; }
+[data-tema="escuro"] .lista-avisos li.selecionado { background: #363225; border-color: #c69c4e; }
+[data-tema="escuro"] .etiqueta-procurando { background: #473517; color: #ffda82; border-color: #8b6a34; }
+[data-tema="escuro"] .etiqueta-retirada { background: #213c5f; color: #c5deff; border-color: #5278a3; }
+[data-tema="escuro"] .etiqueta-devolvido { background: #214537; color: #bcebd0; border-color: #57856f; }
+[data-tema="escuro"] .etiqueta-neutra { background: #304256; color: #d4e1ef; border-color: #647c95; }
+[data-tema="escuro"] .mensagem { background: #243449; color: #e2efff; border-color: var(--borda); }
+[data-tema="escuro"] .erro { color: #ffc4c4; }
+[data-tema="escuro"] .mensagem.erro { background: #442b37; border-color: #83515c; }
+[data-tema="escuro"] .mensagem.sucesso { background: #214537; color: #bcebd0; border-color: #57856f; }
+[data-tema="escuro"] :focus-visible { outline-color: #efba4b; }

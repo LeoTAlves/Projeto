@@ -50,9 +50,7 @@ A integração do login com o frontend ainda está pendente. Atualmente, o backe
 exige autenticação, mas as telas ainda usam a seleção de perfil e não enviam o
 token nas chamadas da API.
 
-## Funcionalidade planejada com IA
-
-A funcionalidade está planejada e ainda não foi implementada.
+## Funcionalidade de sugestão com IA
 
 ### Perfil e problema
 
@@ -76,14 +74,16 @@ priorizará avisos com situação `procurando`, retornará pontuação de 0 a 10
 explicará as características compatíveis e mostrará avisos `devolvido` como
 bloqueados para nova ocorrência.
 
-### Agente, dados e ferramentas
+### Agente, dados e validação
 
 Será usado um único agente de comparação. Ele receberá os campos do objeto
 achado, a lista de avisos, o id e a situação de cada aviso.
 
-Ele não terá acesso direto ao banco e não usará ferramentas externas. Não poderá
-criar ocorrências, alterar situações, gravar dados ou decidir a correspondência
-final. Rodrigo deverá conferir a sugestão antes de registrar a ocorrência.
+O agente não terá acesso direto ao banco nem ferramentas externas. O módulo
+`ia/ferramentas.py` mantém o formato estruturado e as regras de validação da
+resposta; não são funções executáveis pelo modelo. O agente não poderá criar
+ocorrências, alterar situações, gravar dados ou decidir a correspondência final.
+Rodrigo deverá conferir a sugestão antes de registrar a ocorrência.
 
 ### Continuidade quando a IA falhar
 
@@ -95,20 +95,22 @@ diretamente.
 A regra de negócio continuará no serviço do backend. A IA nunca decidirá sozinha
 a devolução nem gravará uma ocorrência.
 
-### Provedor e integração
+### Provedores e integração
 
-O provedor proposto para o MVP é a API da OpenAI `?`. Essa escolha ainda não foi
-aprovada. Claude, Gemini ou outro provedor continuam como alternativas `?`.
+O MVP usa Gemini como provedor primário, OpenRouter como primeira reserva e
+Claude como segunda reserva. As chaves `GEMINI_API_KEY`, `OPENROUTER_API_KEY` e
+`ANTHROPIC_API_KEY` são lidas pelo `configuracao.py`.
 
-A integração deverá ficar isolada em uma camada própria, para permitir trocar o
-provedor sem alterar as rotas ou a regra do serviço.
+A integração fica isolada em `ia/modelos.py`, permitindo trocar os provedores
+sem alterar a rota ou a regra de sugestão.
 
-A proposta atual é usar uma chamada ao modelo e nenhum agente adicional. Um agente
-com ferramentas de leitura só será considerado se o volume de avisos exigir
-consultas em etapas `?`.
+A rota autenticada `POST /ia/sugestoes` consulta avisos e retorna sugestões, mas
+nunca grava uma ocorrência. Se a entrada tiver menos de três características,
+responde pedindo mais informações sem chamar um provedor. Se todos os provedores
+falharem, a API retorna `503` e a equipe pode continuar manualmente.
 
-A funcionalidade permanece planejada. Ainda não existe rota, serviço, tela,
-chamada de API ou integração com provedor.
+O endpoint de backend está implementado; ainda não há tela nem chamada no
+frontend.
 
 Os testes manuais registrados em `.docs/ia.md` cobriram uma entrada normal, uma
 entrada com menos de três características e uma entrada fora do assunto. Os

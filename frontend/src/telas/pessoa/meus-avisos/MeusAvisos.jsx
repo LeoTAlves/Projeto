@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { listarAvisos, buscarAviso } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
+import CodigoRetirada from '../../../componentes/CodigoRetirada';
 import Situacao, { LegendaSituacoes } from '../../../componentes/Situacao';
 
 // A tela de meus avisos combina a lista do visitante com o detalhe de cada aviso e suas ocorrências.
@@ -85,6 +86,9 @@ function MeusAvisos({ visitanteId }) {
             <p><strong>Pavilhão:</strong> {avisoSelecionado.pavilhao}</p>
             <p><strong>Noite:</strong> {avisoSelecionado.noite}</p>
             <p className="situacao-atual"><strong>Situação</strong><Situacao valor={avisoSelecionado.situacao} /></p>
+            {avisoSelecionado.situacao === 'aguardando retirada' && (
+              <CodigoRetirada key={avisoSelecionado.id} avisoId={avisoSelecionado.id} />
+            )}
 
             <h4>Ocorrências</h4>
             {avisoSelecionado.ocorrencias.length === 0 ? (

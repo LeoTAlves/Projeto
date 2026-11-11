@@ -17,7 +17,7 @@ class Aviso(Base):
     visitante_id = Column(
         Integer,
         ForeignKey("usuarios.id", name="fk_avisos_visitante"),
-        nullable=False,
+        nullable=True,
     )
 
     # relationship permite ler aviso.ocorrencias; ele não acrescenta uma coluna ao banco.

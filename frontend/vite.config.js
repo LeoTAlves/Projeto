@@ -7,4 +7,13 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
   },
+  // A prévia do build encaminha as chamadas ao backend local.
+  preview: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8001',
+        rewrite: (caminho) => caminho.replace(/^\/api(?=\/|$)/, ''),
+      },
+    },
+  },
 });

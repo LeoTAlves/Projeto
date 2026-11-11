@@ -16,9 +16,25 @@ class AvisoSaida(BaseModel):
     descricao: str
     pavilhao: str
     noite: date
-    visitante_id: int
-    situacao: Literal["procurando", "aguardando retirada", "devolvido"]
+    visitante_id: int | None
+    situacao: Literal["procurando", "aguardando retirada", "devolvido", "triado"]
 
 # O detalhe agrega ocorrências já definidas no esquema do próprio recurso de ocorrências.
 class AvisoDetalhe(AvisoSaida):
     ocorrencias: list[OcorrenciaSaida] = Field(default_factory=list)
+
+
+class VinculoVisitante(BaseModel):
+    visitante_id: int = Field(gt=0)
+
+
+class CodigoRetirada(BaseModel):
+    codigo: str
+
+
+class CorrespondenciaTriagem(AvisoSaida):
+    termos_em_comum: list[str]
+
+
+class ConfirmacaoTriagem(BaseModel):
+    aviso_ids: list[int] = Field(min_length=1, max_length=100)
