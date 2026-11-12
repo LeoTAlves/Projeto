@@ -25,7 +25,6 @@ class AvisoCriar(AtributosObjeto):
     pavilhao: Literal["Pavilhao 1", "Pavilhao 2", "Pavilhao 3"]
     noite: date  # Valida uma data real, mantendo AAAA-MM-DD no JSON.
     local_guarda: str | None = Field(default=None, max_length=100)
-    detalhe_privado: str | None = Field(default=None, max_length=200)
 
 
 # O balcão pode registrar só a descrição. Clientes anteriores ainda podem enviar os demais dados.
@@ -46,13 +45,7 @@ class AvisoSaida(AtributosObjeto):
     recebido_por: str | None = None
     origem_achado_id: int | None = None
     situacao_desde: datetime | None = None
-    retirada_aprovada: bool = False
-    tem_detalhe_privado: bool = False
 
-
-class ConferenciaRetirada(BaseModel):
-    conferido: bool
-    detalhe_informado: str | None = Field(default=None, max_length=200)
 
 # O detalhe agrega ocorrências já definidas no esquema do próprio recurso de ocorrências.
 class AvisoDetalhe(AvisoSaida):
@@ -64,7 +57,7 @@ class VinculoVisitante(BaseModel):
 
 
 class CodigoRetirada(BaseModel):
-    codigo: str
+    codigo: str = Field(pattern=r"^[0-9]{6}$")
 
 
 class CorrespondenciaTriagem(AvisoSaida):

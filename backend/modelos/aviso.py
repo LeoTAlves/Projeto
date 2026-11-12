@@ -18,19 +18,11 @@ class Aviso(Base):
     cor = Column(String(100))
     marca = Column(String(100))
     local_guarda = Column(String(100))
-    detalhe_privado = Column(String(200))
     nonce_retirada = Column(String(64))
     origem_achado_id = Column(Integer)
     situacao_desde = Column(DateTime(timezone=True))
     recebido_por = Column(String(100))
 
-    @property
-    def retirada_aprovada(self):
-        return bool(self.nonce_retirada)
-
-    @property
-    def tem_detalhe_privado(self):
-        return bool(self.detalhe_privado)
     visitante_id = Column(
         Integer,
         ForeignKey("usuarios.id", name="fk_avisos_visitante"),

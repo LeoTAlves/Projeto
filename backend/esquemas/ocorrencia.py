@@ -6,7 +6,7 @@ from datetime import date, datetime
 class OcorrenciaCriar(BaseModel):
     tipo: Literal["objeto achado", "devolucao"]
     descricao: str = Field(..., min_length=3, max_length=200)
-    codigo_retirada: str | None = Field(default=None, max_length=32)
+    codigo_retirada: str | None = Field(default=None, pattern=r"^[0-9]{6}$")
 
 # A resposta da rota devolve o identificador, a data e o aviso ao qual pertence.
 class OcorrenciaSaida(BaseModel):

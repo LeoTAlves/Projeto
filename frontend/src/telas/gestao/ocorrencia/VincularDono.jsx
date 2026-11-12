@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { listarVisitantes, vincularVisitante } from '../../../servicos/api';
 
-// A equipe confirma a identidade antes de liberar o código na conta do visitante.
+// Vincular o aviso disponibiliza o código de retirada na conta selecionada.
 export default function VincularDono({ avisoId, aoVincular }) {
   const [visitantes, setVisitantes] = useState(null);
   const [visitanteId, setVisitanteId] = useState('');

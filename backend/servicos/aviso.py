@@ -1,7 +1,6 @@
 import re
 import unicodedata
 from datetime import datetime, timezone
-from hmac import compare_digest
 from secrets import token_hex
 
 from modelos.ocorrencia import Ocorrencia
@@ -73,7 +72,7 @@ def confirmar_triagem(sessao, achado_id, aviso_ids, usuario):
         perda.origem_achado_id = achado.id
         perda.local_guarda = achado.local_guarda
         perda.recebido_por = achado.recebido_por
-        perda.nonce_retirada = None
+        perda.nonce_retirada = token_hex(32)
         registrar_evento(sessao, perda, "objeto achado",
                          f"Achado confirmado na triagem #{achado.id}: {achado.descricao}", usuario)
     # Fecha o registro de entrada para evitar uma segunda retirada do mesmo lote.
@@ -135,7 +134,7 @@ def registrar_objeto_no_balcao(sessao, dados, usuario):
         **dados, "visitante_id": None, "situacao": "aguardando retirada",
         "pavilhao": dados.get("pavilhao") or "Não informado",
         "noite": dados.get("noite") or agora.date(),
-        "detalhe_privado": None, "situacao_desde": agora,
+        "situacao_desde": agora,
         "recebido_por": f"#{usuario.id} {usuario.nome}"[:100],
     })
 
@@ -165,33 +164,13 @@ def vincular_visitante(sessao, aviso_id, visitante_id, usuario):
     if visitante is None or visitante.tipo != "visitante":
         return "Selecione uma conta de visitante."
     aviso.visitante_id = visitante.id
+    aviso.nonce_retirada = token_hex(32)
     mudar_situacao(aviso, "aguardando retirada")
     registrar_evento(sessao, aviso, "objeto achado", "Visitante vinculado no balcão.", usuario)
     sessao.commit()
     sessao.refresh(aviso)
     return aviso
 
-
-def aprovar_retirada(sessao, aviso_id, dados, usuario):
-    aviso = repositorio_aviso.bloquear_aviso(sessao, aviso_id)
-    if aviso is None:
-        return None
-    if aviso.situacao != "aguardando retirada" or aviso.visitante_id is None:
-        return "Selecione um achado em conferência vinculado a um visitante."
-    if aviso.nonce_retirada:
-        return aviso
-    if not dados.conferido:
-        return "Confirme a conferência de propriedade antes de aprovar."
-    if aviso.detalhe_privado:
-        esperado = " ".join(aviso.detalhe_privado.casefold().split()).encode()
-        informado = " ".join((dados.detalhe_informado or "").casefold().split()).encode()
-        if not compare_digest(esperado, informado):
-            return "O detalhe informado não confere com o registro do visitante."
-    aviso.nonce_retirada = token_hex(32)
-    mudar_situacao(aviso, "aguardando retirada")
-    registrar_evento(sessao, aviso, "retirada aprovada", "Propriedade conferida no balcão.", usuario)
-    sessao.commit()
-    return aviso
 
 
 def corrigir_vinculo(sessao, aviso_id, usuario):

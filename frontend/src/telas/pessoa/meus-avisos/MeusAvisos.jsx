@@ -2,7 +2,7 @@
 import { listarAvisos, buscarAviso, cancelarAviso } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
 import CodigoRetirada from '../../../componentes/CodigoRetirada';
-import Situacao, { LegendaSituacoes, situacaoDoAviso } from '../../../componentes/Situacao';
+import Situacao, { LegendaSituacoes } from '../../../componentes/Situacao';
 
 // A tela de meus avisos combina a lista do visitante com o detalhe de cada aviso e suas ocorrências.
 function MeusAvisos({ visitanteId, avisoInicial }) {
@@ -86,7 +86,7 @@ function MeusAvisos({ visitanteId, avisoInicial }) {
                   <span className="aviso-numero">Aviso #{aviso.id}</span>
                   <strong>{aviso.descricao}</strong>
                   <span>{aviso.pavilhao}</span>
-                  <Situacao valor={situacaoDoAviso(aviso)} />
+                  <Situacao valor={aviso.situacao} />
                 </button>
               </li>
             ))}
@@ -106,7 +106,7 @@ function MeusAvisos({ visitanteId, avisoInicial }) {
             {avisoSelecionado.categoria && <p><strong>Categoria</strong> {avisoSelecionado.categoria}</p>}
             <p><strong>Pavilhão:</strong> {avisoSelecionado.pavilhao}</p>
             <p><strong>Noite:</strong> {avisoSelecionado.noite}</p>
-            <p className="situacao-atual"><strong>Situação</strong><Situacao valor={situacaoDoAviso(avisoSelecionado)} /></p>
+            <p className="situacao-atual"><strong>Situação</strong><Situacao valor={avisoSelecionado.situacao} /></p>
             {avisoSelecionado.situacao === 'procurando' && (
               <div className="painel-retirada">
                 <p>Já encontrou o objeto por conta própria?</p>
@@ -118,9 +118,7 @@ function MeusAvisos({ visitanteId, avisoInicial }) {
             )}
             {avisoSelecionado.situacao === 'cancelado' && <p role="status">A busca por este aviso foi encerrada.</p>}
             {avisoSelecionado.situacao === 'aguardando retirada' && (
-              avisoSelecionado.retirada_aprovada ? (
-                <><p role="status">Retirada aprovada.</p><CodigoRetirada key={avisoSelecionado.id} avisoId={avisoSelecionado.id} /></>
-              ) : <p role="status">Possível achado em conferência. Aguarde a aprovação do balcão.</p>
+              <CodigoRetirada key={avisoSelecionado.id} avisoId={avisoSelecionado.id} />
             )}
 
             <h4>Ocorrências</h4>

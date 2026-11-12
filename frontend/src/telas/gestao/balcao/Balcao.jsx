@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { listarAvisos } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
-import Situacao, { situacaoDoAviso } from '../../../componentes/Situacao';
+import Situacao from '../../../componentes/Situacao';
 import Ocorrencia from '../ocorrencia/Ocorrencia';
 
 const filas = [
   ['', 'Todos os avisos'],
   ['triagem', 'Para triar'],
-  ['conferencia', 'Em conferência'],
   ['retirada', 'Prontos para retirada'],
 ];
 
@@ -16,7 +15,7 @@ function acaoDoAviso(aviso) {
   if (aviso.situacao === 'procurando') return 'Registrar achado';
   if (aviso.situacao !== 'aguardando retirada') return 'Ver atendimento';
   if (aviso.visitante_id == null) return 'Triar objeto';
-  return aviso.retirada_aprovada ? 'Entregar objeto' : 'Conferir propriedade';
+  return 'Entregar objeto';
 }
 
 // A fila conserva seus filtros e sua página quando a pessoa abre e fecha um aviso.
@@ -103,7 +102,7 @@ export default function Balcao({ avisoInicial }) {
             <li key={aviso.id}>
               <div className="aviso-topo">
                 <span className="aviso-numero">Aviso #{aviso.id}</span>
-                <Situacao valor={situacaoDoAviso(aviso)} />
+                <Situacao valor={aviso.situacao} />
               </div>
               <strong>{aviso.descricao}</strong>
               <span className="aviso-metadados">

@@ -23,7 +23,7 @@ export default function CodigoRetirada({ avisoId }) {
   return (
     <div className="painel-retirada">
       <strong>Retirada no balcão</strong>
-      <p>Apresente este código à equipe no momento da retirada.</p>
+      <p>Apresente o código de seis dígitos à equipe no momento da retirada.</p>
       {codigo && <code className="codigo-retirada">{codigo}</code>}
       <button type="button" className="botao-secundario" disabled={carregando}
         onClick={codigo ? () => setCodigo('') : mostrar}>

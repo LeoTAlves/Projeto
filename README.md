@@ -128,14 +128,11 @@ antes de publicar o backend atualizado. A revisão `9ab64c2f018e` permite que
    o pavilhão e a data. O aviso inicia em **Aguardando retirada**.
 2. Em **A ocorrência**, selecione o aviso. Após conferir a descrição e os detalhes
    com a pessoa, vincule o aviso à conta de visitante dela.
-3. No balcão, confira a propriedade e aprove a retirada. Depois, o visitante
-   abre o aviso em **Meus avisos** e clica em **Mostrar código**.
-4. No balcão, selecione **Devolução**, preencha o código apresentado e registre.
+3. Com o achado vinculado, o visitante abre **Meus avisos** e clica em
+   **Mostrar código** para consultar os seis dígitos.
+4. No balcão, selecione **Entregar objeto**, digite o código e confirme a devolução.
    Código incorreto ou ausente mantém o aviso aguardando retirada. O código deixa
    de ser consultável e reutilizável após a devolução.
-
-Quando a equipe registra o achado de um aviso já vinculado, o visitante vê em
-**Meus avisos** que há um possível achado em conferência.
 
 ## Sugestões de correspondência por IA
 
@@ -151,23 +148,21 @@ Se os provedores falharem, a API responde `503`; use os filtros e a triagem
 manual. As descrições são enviadas aos provedores configurados, sem dados de
 visitantes, e o modelo não tem acesso ao banco nem ferramentas de escrita.
 
-## Categorias, triagem e retirada com conferência
+## Categorias, triagem e retirada com código
 
 Os registros novos aceitam categoria, cor e marca. O balcão informa o local de
 guarda e pode imprimir uma etiqueta em **Abrir atendimento → Etiqueta de guarda**.
 Depois de uma triagem, use o número do aviso de perda na etiqueta de cada item.
 Os registros antigos continuam pesquisáveis pela descrição.
 
-No balcão, a fila separa achados sem triagem, avisos em conferência e retiradas
-aprovadas. A triagem mostra os dados lado a lado e oferece busca por texto e
+No balcão, a fila separa achados para triar e objetos prontos para retirada.
+A triagem mostra os dados lado a lado e oferece busca por texto e
 sugestões com IA. O cadastro sugere atributos e, para visitantes, avisa sobre
 possíveis duplicidades entre os avisos da própria conta.
 
-Depois de confirmar um achado, abra o atendimento, confira a propriedade e
-aprove a retirada. Se o visitante tiver cadastrado um detalhe privado, peça
-que ele o informe. O código só aparece depois da aprovação. **Corrigir vínculo**
-invalida o código e reabre a busca. Na próxima aprovação, o sistema gera um
-novo código. O comprovante aparece no histórico após a entrega.
+O código fica disponível para o visitante assim que o achado estiver vinculado.
+**Corrigir vínculo** invalida o código. Um novo vínculo gera outro código.
+O comprovante aparece no histórico após a entrega.
 
 ### Ativar a nova versão
 
@@ -181,7 +176,7 @@ novo código. O comprovante aparece no histórico após a entrega.
    `GEMINI_API_KEY`, `OPENROUTER_API_KEY` ou `ANTHROPIC_API_KEY`.
 4. Atualize backend e frontend juntos. Equipe e administrador entram com e-mail e senha.
    Visitantes existentes continuam ativos. Novos visitantes confirmam o e-mail.
-   Achados antigos pendentes passam pela conferência antes de liberar um novo código.
+   Visitantes com achados antigos vinculados podem consultar o código atualizado em **Meus avisos**.
 
 Na pasta `backend`, execute `python -m tests.benchmark_triagem` para comparar
 quantos avisos corretos aparecem entre os três primeiros resultados. O roteiro

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { buscarAviso, criarOcorrencia } from '../../../servicos/api';
-import Situacao, { situacaoDoAviso } from '../../../componentes/Situacao';
+import Situacao from '../../../componentes/Situacao';
 import EtiquetaObjeto from '../../../componentes/EtiquetaObjeto';
 import Triagem from '../balcao/Triagem';
 import VincularDono from './VincularDono';
-import ConferirRetirada from './ConferirRetirada';
+import CorrigirVinculo from './CorrigirVinculo';
 
 // O aviso já vem escolhido da fila. Sua situação determina a ação do atendimento.
 export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
@@ -40,7 +40,7 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
     setTentativa((atual) => atual + 1);
   }
 
-  const devolucao = aviso?.situacao === 'aguardando retirada' && aviso.retirada_aprovada;
+  const devolucao = aviso?.situacao === 'aguardando retirada' && aviso.visitante_id != null;
   const semVisitante = aviso?.situacao === 'aguardando retirada' && aviso.visitante_id == null;
 
   // A entrega usa o código informado. O histórico recebe uma descrição padrão se não houver nota.
@@ -106,7 +106,7 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
             <h2 tabIndex={-1} ref={titulo}>
               {aviso.descricao}
             </h2>
-            <Situacao valor={situacaoDoAviso(aviso)} />
+            <Situacao valor={aviso.situacao} />
             <p className="aviso-metadados">
               {[aviso.categoria, aviso.cor, aviso.marca, aviso.pavilhao,
                 aviso.noite && aviso.noite.split('-').reverse().join('/'),
@@ -122,15 +122,12 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
           {semVisitante && <Triagem aviso={aviso} aoRegistrar={concluirTriagem} />}
           {avisosTriados.length > 0 && (
             <div className="painel-retirada">
-              <strong role="status">Achado registrado. Abra o aviso para conferir a retirada ou imprimir a etiqueta.</strong>
+              <strong role="status">Achado registrado. Abra o aviso para entregar o objeto ou imprimir a etiqueta.</strong>
               {avisosTriados.map((registrado) => (
                 <button key={registrado.id} type="button" className="botao-secundario"
                   onClick={() => aoAbrirAviso(registrado.id)}>Abrir aviso #{registrado.id}</button>
               ))}
             </div>
-          )}
-          {aviso.situacao === 'aguardando retirada' && aviso.visitante_id != null && !devolucao && (
-            <ConferirRetirada aviso={aviso} aoAtualizar={atualizarAviso} />
           )}
           {(aviso.situacao === 'procurando' || devolucao) && (
             <form key={aviso.situacao} onSubmit={registrar} className="formulario painel-retirada">
@@ -138,8 +135,8 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
               {devolucao && (
                 <label>
                   Código de retirada
-                  <input name="codigo" required maxLength={32} autoComplete="off" spellCheck={false} disabled={enviando} />
-                  <small>Peça ao visitante para mostrar o código em Meus avisos.</small>
+                  <input name="codigo" required inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="off" spellCheck={false} disabled={enviando} />
+                  <small>Peça ao visitante para mostrar o código de seis dígitos em Meus avisos.</small>
                 </label>
               )}
               {devolucao ? (
@@ -165,7 +162,7 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
               <summary>Etiqueta e opções do aviso</summary>
               <EtiquetaObjeto aviso={aviso} />
               {semVisitante && <VincularDono avisoId={aviso.id} aoVincular={atualizarAviso} />}
-              {devolucao && <ConferirRetirada aviso={aviso} aoAtualizar={atualizarAviso} />}
+              {devolucao && <CorrigirVinculo aviso={aviso} aoAtualizar={atualizarAviso} />}
             </details>
           )}
           {aviso.ocorrencias?.length > 0 && (

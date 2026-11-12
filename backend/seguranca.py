@@ -40,8 +40,10 @@ def verificar_senha(senha: str, senha_hash: str):
 
 
 # O segredo do servidor vincula o código ao aviso e ao dono sem gravar o código no banco.
-def gerar_codigo_retirada(aviso_id, visitante_id, nonce):
-    mensagem = f"cade:retirada:v2:{aviso_id}:{visitante_id}:{nonce}".encode()
+def gerar_codigo_retirada(aviso):
+    # O timestamp mantém elegíveis os achados antigos que ficaram pendentes de aprovação.
+    vinculo = aviso.nonce_retirada or aviso.situacao_desde
+    mensagem = f"cade:retirada:v3:{aviso.id}:{aviso.visitante_id}:{vinculo}".encode()
     chave = configuracao["chave_do_token"].encode()
-    codigo = hmac_novo(chave, mensagem, sha256).hexdigest()[:16].upper()
-    return "-".join(codigo[i:i + 4] for i in range(0, 16, 4))
+    digest = hmac_novo(chave, mensagem, sha256).digest()
+    return f"{int.from_bytes(digest, 'big') % 1_000_000:06d}"

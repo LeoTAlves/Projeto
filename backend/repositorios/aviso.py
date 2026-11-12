@@ -40,9 +40,6 @@ def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=
             consulta = consulta.where(Aviso.visitante_id.is_(None))
         else:
             consulta = consulta.where(Aviso.visitante_id.is_not(None))
-            consulta = consulta.where(
-                Aviso.nonce_retirada.is_not(None) if pendencia == "retirada" else Aviso.nonce_retirada.is_(None)
-            )
         consulta = consulta.order_by(None).order_by(Aviso.situacao_desde, Aviso.id)
     consulta = consulta.limit(10).offset((pagina - 1) * 10)
     return sessao.scalars(consulta).all()

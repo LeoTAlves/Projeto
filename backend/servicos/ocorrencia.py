@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from hmac import compare_digest
+from secrets import token_hex
 
 from repositorios import aviso as repositorio_aviso
 from repositorios import ocorrencia as repositorio_ocorrencia
@@ -29,17 +30,16 @@ def registrar_ocorrencia(sessao, aviso_id, dados, usuario_id, atendente):
 
     if dados["tipo"] == "objeto achado":
         if aviso.situacao != "procurando":
-            return "O aviso já tem um achado em conferência."
+            return "O aviso já tem um achado registrado."
         mudar_situacao(aviso, "aguardando retirada")
+        aviso.nonce_retirada = token_hex(32)
     elif dados["tipo"] == "devolucao":
         if aviso.situacao != "aguardando retirada":
             return "Registre o achado antes de devolver o objeto."
         if aviso.visitante_id is None:
             return "Vincule o visitante ao aviso antes da devolução."
-        if not aviso.nonce_retirada:
-            return "Aprove a retirada antes de registrar a devolução."
-        codigo = (dados.get("codigo_retirada") or "").strip().upper().replace("-", "")
-        esperado = gerar_codigo_retirada(aviso.id, aviso.visitante_id, aviso.nonce_retirada).replace("-", "")
+        codigo = (dados.get("codigo_retirada") or "").strip()
+        esperado = gerar_codigo_retirada(aviso)
         if not codigo.isascii() or not compare_digest(codigo, esperado):
             return "Código de retirada inválido. Peça o código ao visitante."
         mudar_situacao(aviso, "devolvido")

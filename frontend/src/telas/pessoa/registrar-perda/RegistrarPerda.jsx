@@ -17,7 +17,6 @@ function RegistrarPerda({ aoAbrirAviso }) {
   const [categoria, setCategoria] = useState('');
   const [cor, setCor] = useState('');
   const [marca, setMarca] = useState('');
-  const [detalhe, setDetalhe] = useState('');
   const [duplicados, setDuplicados] = useState([]);
   const [sugestao, setSugestao] = useState(null);
   const [consultandoIA, setConsultandoIA] = useState(false);
@@ -40,7 +39,6 @@ function RegistrarPerda({ aoAbrirAviso }) {
       const resultado = await criarAviso({
         descricao, pavilhao, noite, categoria: categoria || null,
         cor: cor.trim() || null, marca: marca.trim() || null,
-        detalhe_privado: detalhe.trim() || null,
       });
       setMensagem(`Aviso ${resultado.id} registrado com a situação ${resultado.situacao}.`);
       setDescricao('');
@@ -49,7 +47,6 @@ function RegistrarPerda({ aoAbrirAviso }) {
       setCategoria('');
       setCor('');
       setMarca('');
-      setDetalhe('');
       setDuplicados([]);
       setSugestao(null);
     } catch (falha) {
@@ -119,11 +116,6 @@ function RegistrarPerda({ aoAbrirAviso }) {
           <label>Cor<input maxLength={100} value={cor} onChange={(evento) => setCor(evento.target.value)} /></label>
           <label>Marca<input maxLength={100} value={marca} onChange={(evento) => setMarca(evento.target.value)} /></label>
         </div>
-        <label>
-          Detalhe privado para a retirada
-          <input maxLength={200} value={detalhe} onChange={(evento) => setDetalhe(evento.target.value)} />
-          <small>Guarde esse detalhe para a conferência no balcão. Exemplo: adesivo dentro da capa.</small>
-        </label>
 
         <div className="formulario">
         <label>

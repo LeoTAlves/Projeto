@@ -8,8 +8,8 @@ from rotas.autenticacao import GRUPO_ADMIN, GRUPO_EQUIPE, GRUPO_VISITANTE, exigi
 from seguranca import gerar_codigo_retirada
 from servicos.aviso import buscar_aviso, cancelar_aviso, confirmar_triagem, criar_aviso as criar_aviso_servico, listar_avisos, registrar_objeto_no_balcao, triar_objeto, vincular_visitante
 from servicos.usuario import obter_usuario_atual
-from esquemas.aviso import ConferenciaRetirada, DescricaoObjeto, ObjetoBalcaoCriar
-from servicos.aviso import aprovar_retirada, corrigir_vinculo, possiveis_duplicados
+from esquemas.aviso import DescricaoObjeto, ObjetoBalcaoCriar
+from servicos.aviso import corrigir_vinculo, possiveis_duplicados
 
 # O router reúne os caminhos que o visitante e o balcão já utilizam.
 router = APIRouter(prefix="/avisos", tags=["avisos"])
@@ -20,7 +20,7 @@ router = APIRouter(prefix="/avisos", tags=["avisos"])
 def listar_avisos_rotas(
     pavilhao: str | None = Query(default=None, description="Filtra por pavilhão"),
     pagina: int = Query(default=1, ge=1, description="Página de dez avisos"),
-    pendencia: Literal["triagem", "conferencia", "retirada"] | None = None,
+    pendencia: Literal["triagem", "retirada"] | None = None,
     usuario=Depends(obter_usuario_atual),
     sessao=Depends(obter_sessao),
 ):
@@ -136,28 +136,19 @@ def consultar_codigo_retirada(
     sessao=Depends(obter_sessao),
 ):
     aviso = buscar_aviso(sessao, aviso_id, usuario.id)
-    if aviso is None or aviso.situacao != "aguardando retirada" or not aviso.nonce_retirada:
+    if aviso is None or aviso.situacao != "aguardando retirada":
         raise HTTPException(status_code=404, detail="Código de retirada indisponível.")
     resposta.headers["Cache-Control"] = "private, no-store"
-    return {"codigo": gerar_codigo_retirada(aviso.id, usuario.id, aviso.nonce_retirada)}
+    return {"codigo": gerar_codigo_retirada(aviso)}
 
 
-def resposta_da_conferencia(aviso):
+def resposta_da_correcao(aviso):
     if aviso is None:
         raise HTTPException(status_code=404, detail="Aviso não encontrado.")
     if isinstance(aviso, str):
         raise HTTPException(status_code=409, detail=aviso)
     return aviso
 
-
-@router.post("/{aviso_id}/aprovar-retirada", response_model=AvisoSaida)
-def aprovar_retirada_rota(
-    aviso_id: int,
-    dados: ConferenciaRetirada,
-    usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
-    sessao=Depends(obter_sessao),
-):
-    return resposta_da_conferencia(aprovar_retirada(sessao, aviso_id, dados, usuario))
 
 
 @router.post("/{aviso_id}/corrigir-vinculo", response_model=AvisoSaida)

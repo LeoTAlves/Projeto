@@ -137,12 +137,6 @@ export function sugerirCorrespondencias(dados) {
   });
 }
 
-export function aprovarRetirada(id, dados) {
-  return executarRequisicao(URL_DA_API + "/avisos/" + id + "/aprovar-retirada", {
-    method: 'POST', body: JSON.stringify(dados),
-  });
-}
-
 export function corrigirVinculo(id) {
   return executarRequisicao(URL_DA_API + "/avisos/" + id + "/corrigir-vinculo", { method: 'POST' });
 }
