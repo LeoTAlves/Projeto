@@ -22,6 +22,7 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
   const [duplicados, setDuplicados] = useState([]);
   const [sugestao, setSugestao] = useState(null);
   const [consultandoIA, setConsultandoIA] = useState(false);
+  const [achadoId, setAchadoId] = useState(null);
 
   // O envio usa o visitante escolhido no perfil e mostra claramente sucesso ou falha.
   const enviarFormulario = async (evento) => {
@@ -29,6 +30,7 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
     setCarregando(true);
     setMensagem('');
     setErro(false);
+    setAchadoId(null);
 
     try {
       if (!peloBalcao && !duplicados.length) {
@@ -46,6 +48,7 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
         detalhe_privado: peloBalcao ? null : detalhe.trim() || null,
       });
       if (peloBalcao) {
+        setAchadoId(resultado.id);
         setMensagem('Objeto #' + resultado.id + ' registrado. Use esse número na etiqueta de guarda.');
       } else {
         setMensagem(`Aviso ${resultado.id} registrado com a situação ${resultado.situacao}.`);
@@ -89,7 +92,7 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
     <section className="cartao">
       <h3>{peloBalcao ? 'Registrar objeto encontrado' : 'Registrar perda'}</h3>
       <p className="texto-apoio">{peloBalcao
-        ? 'Registre o objeto recebido. O visitante pode ser vinculado mais tarde na tela A ocorrência.'
+        ? 'Identifique o objeto e indique onde ele ficará guardado.'
         : 'Conte o que você perdeu. Quanto mais detalhes, mais fácil reconhecer.'}</p>
       <form onSubmit={enviarFormulario} className="formulario">
         <fieldset disabled={carregando || consultandoIA} className="formulario cadastro-equipe">
@@ -125,8 +128,10 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
             {categorias.map((nome) => <option key={nome}>{nome}</option>)}
           </select>
         </label>
-        <label>Cor<input maxLength={100} value={cor} onChange={(evento) => setCor(evento.target.value)} /></label>
-        <label>Marca<input maxLength={100} value={marca} onChange={(evento) => setMarca(evento.target.value)} /></label>
+        <div className={peloBalcao ? 'campos-lado-a-lado' : 'formulario'}>
+          <label>Cor<input maxLength={100} value={cor} onChange={(evento) => setCor(evento.target.value)} /></label>
+          <label>Marca<input maxLength={100} value={marca} onChange={(evento) => setMarca(evento.target.value)} /></label>
+        </div>
         {peloBalcao ? (
           <label>Local de guarda<input required maxLength={100} value={localGuarda}
             placeholder="Ex. Armário B, caixa 03" onChange={(evento) => setLocalGuarda(evento.target.value)} /></label>
@@ -138,6 +143,7 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
           </label>
         )}
 
+        <div className={peloBalcao ? 'campos-lado-a-lado' : 'formulario'}>
         <label>
           Pavilhão
           <select value={pavilhao} onChange={(evento) => setPavilhao(evento.target.value)}>
@@ -148,7 +154,7 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
         </label>
 
         <label>
-          Noite
+          {peloBalcao ? 'Data em que foi encontrado' : 'Noite'}
           <input
             required
             type="date"
@@ -156,6 +162,7 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
             onChange={(evento) => setNoite(evento.target.value)}
           />
         </label>
+        </div>
 
         {duplicados.length > 0 && (
           <div className="painel-retirada" role="status">
@@ -174,6 +181,9 @@ function RegistrarPerda({ peloBalcao = false, aoAbrirAviso }) {
       </form>
 
       {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem sucesso'} role="status">{mensagem}</p>}
+      {achadoId && (
+        <button type="button" onClick={() => aoAbrirAviso(achadoId)}>Triar objeto #{achadoId}</button>
+      )}
     </section>
   );
 }

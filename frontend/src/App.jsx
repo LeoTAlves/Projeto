@@ -3,7 +3,6 @@ import { buscarUsuarioAtual, confirmarEmail, criarConta, limparSessao, login, sa
 import RegistrarPerda from './telas/pessoa/registrar-perda/RegistrarPerda';
 import MeusAvisos from './telas/pessoa/meus-avisos/MeusAvisos';
 import Balcao from './telas/gestao/balcao/Balcao';
-import Ocorrencia from './telas/gestao/ocorrencia/Ocorrencia';
 import CadastrarEquipe from './telas/gestao/equipe/CadastrarEquipe';
 import Marca from './componentes/Marca';
 
@@ -30,6 +29,7 @@ function App() {
   const [segundoFator, setSegundoFator] = useState(null);
   const [codigoLogin, setCodigoLogin] = useState('');
   const [avisoParaAbrir, setAvisoParaAbrir] = useState(null);
+  const [avisoBalcao, setAvisoBalcao] = useState(null);
 
   // O tema acompanha a pessoa na entrada e nas telas autenticadas.
   useEffect(() => {
@@ -150,6 +150,7 @@ function App() {
     limparSessao();
     setUsuario(null);
     setTela('registrar');
+    setAvisoBalcao(null);
     setEmail('');
     setSenha('');
     setErroLogin('');
@@ -310,21 +311,20 @@ function App() {
   ];
 
   const telasEquipe = [
-    { id: 'balcao', nome: 'O balcão' },
-    { id: 'registrar-balcao', nome: 'Registrar objeto' },
-    { id: 'ocorrencia', nome: 'A ocorrência' },
+    { id: 'balcao', nome: 'Atendimentos' },
+    { id: 'registrar-balcao', nome: 'Registrar objeto encontrado' },
   ];
 
   // A permissão vem da conta autenticada, sem decidir administração pelo e-mail no navegador.
   const administrador = usuario.tipo === 'admin';
   const podeOperarBalcao = administrador || usuario.tipo === 'equipe';
   const telasGestao = administrador
-    ? [...telasEquipe, { id: 'equipe', nome: 'Cadastrar equipe' }]
+    ? [...telasEquipe, { id: 'equipe', nome: 'Cadastrar membro da equipe' }]
     : telasEquipe;
   const telasAtuais = usuario.tipo === 'visitante' ? telasVisitante : telasGestao;
 
   return (
-    <div className="app-shell">
+    <div className={podeOperarBalcao ? 'app-shell app-gestao' : 'app-shell'}>
       <header className="cabecalho">
         <Marca />
         <div className="identidade-usuario">
@@ -336,23 +336,19 @@ function App() {
         </div>
         <div className="acoes-cabecalho">
           {botaoTema}
-          {/* O atalho deixa o cadastro visível sem liberar a função para outros perfis. */}
-          {administrador && (
-            <button type="button" onClick={() => setTela('equipe')}>
-              Cadastrar usuário da equipe
-            </button>
-          )}
           <button type="button" className="botao-secundario" onClick={sair}>
             Sair
           </button>
         </div>
       </header>
 
-      <section className="boas-vindas" aria-label="Seu espaço">
-        <p className="sobretitulo">{usuario.tipo === 'visitante' ? 'Seu ponto de reencontro' : 'Central de atendimento'}</p>
-        <h1>{usuario.tipo === 'visitante' ? 'Vamos encontrar o que faz falta.' : 'Cada objeto tem uma história de volta.'}</h1>
-        <p>{usuario.tipo === 'visitante' ? 'Registre uma perda e acompanhe cada novidade por aqui.' : 'Organize os avisos, registre os achados e ajude a completar reencontros.'}</p>
-      </section>
+      {podeOperarBalcao ? <h1 className="titulo-balcao">Balcão de achados e perdidos</h1> : (
+        <section className="boas-vindas" aria-label="Seu espaço">
+          <p className="sobretitulo">Seu ponto de reencontro</p>
+          <h1>Vamos encontrar o que faz falta.</h1>
+          <p>Registre uma perda e acompanhe cada novidade por aqui.</p>
+        </section>
+      )}
 
       <nav className="navegacao" aria-label="Telas do sistema">
         {telasAtuais.map((item) => (
@@ -360,7 +356,10 @@ function App() {
             key={item.id}
             className={tela === item.id ? 'ativo' : ''}
             aria-current={tela === item.id ? 'page' : undefined}
-            onClick={() => setTela(item.id)}
+            onClick={() => {
+              setAvisoBalcao(null);
+              setTela(item.id);
+            }}
           >
             {item.nome}
           </button>
@@ -371,10 +370,9 @@ function App() {
         {usuario.tipo === 'visitante' && tela === 'registrar' && <RegistrarPerda visitanteId={usuario.id}
           aoAbrirAviso={(id) => { setAvisoParaAbrir(id); setTela('meus'); }} />}
         {usuario.tipo === 'visitante' && tela === 'meus' && <MeusAvisos visitanteId={usuario.id} avisoInicial={avisoParaAbrir} />}
-        {podeOperarBalcao && tela === 'balcao' && <Balcao
-          aoAbrirAviso={(id) => { setAvisoParaAbrir(id); setTela('ocorrencia'); }} />}
-        {podeOperarBalcao && tela === 'registrar-balcao' && <RegistrarPerda peloBalcao />}
-        {podeOperarBalcao && tela === 'ocorrencia' && <Ocorrencia avisoInicial={avisoParaAbrir} />}
+        {podeOperarBalcao && tela === 'balcao' && <Balcao key={avisoBalcao ?? 'fila'} avisoInicial={avisoBalcao} />}
+        {podeOperarBalcao && tela === 'registrar-balcao' && <RegistrarPerda peloBalcao
+          aoAbrirAviso={(id) => { setAvisoBalcao(id); setTela('balcao'); }} />}
         {administrador && tela === 'equipe' && <CadastrarEquipe />}
       </main>
       <footer className="rodape">Cadê!? <span>Achados, perdidos e reencontros.</span></footer>

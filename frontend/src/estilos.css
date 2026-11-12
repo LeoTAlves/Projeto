@@ -258,6 +258,37 @@ textarea { resize: vertical; line-height: 1.6; }
 [data-tema="escuro"] .navegacao button.ativo { background: #405875; border-color: #7890aa; }
 [data-tema="escuro"] .avatar { background: #354b65; }
 [data-tema="escuro"] .lista-avisos li.selecionado { background: #363225; border-color: #c69c4e; }
+
+/* A fila e os formulários do balcão ocupam menos espaço sem reduzir os alvos de toque. */
+.titulo-balcao { font-size: clamp(1.4rem, 3vw, 2rem); margin: 1.5rem 0 1rem; }
+.titulo-atendimento { margin: 0 0 1rem; }
+.app-gestao .navegacao { margin-bottom: 1rem; }
+.filtros-atendimento, .campos-lado-a-lado {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.filtros-atendimento { margin-bottom: 1rem; align-items: end; }
+.busca-aviso, .busca-triagem { display: flex; align-items: end; gap: 0.6rem; flex-wrap: wrap; }
+.busca-aviso label, .busca-triagem label { flex: 1 1 12rem; }
+.busca-triagem > button { width: auto; min-width: 0; margin-top: 0; }
+.filtros-fila button { white-space: nowrap; }
+.lista-balcao > li { align-content: start; }
+.lista-balcao > li > button { justify-self: start; }
+.atendimento { display: grid; gap: 1rem; }
+.atendimento > .mensagem, .atendimento > .painel-retirada { margin: 0; }
+.atendimento-resumo { overflow-wrap: anywhere; }
+.atendimento-resumo h2 { margin: 0 0 0.65rem; }
+.atendimento-resumo p { margin: 0.6rem 0; }
+.atendimento-resumo small { display: block; color: var(--apoio); }
+.atendimento .painel-retirada h3 { margin: 0; font-size: 1.15rem; }
+.atendimento summary { cursor: pointer; font-weight: 650; padding: 0.65rem 0; }
+.opcoes-atendimento { border-top: 1px solid var(--borda); }
+.acao-triagem-lote { margin-top: 0.8rem; }
+
+@media (max-width: 700px) {
+  .filtros-atendimento, .campos-lado-a-lado { grid-template-columns: minmax(0, 1fr); }
+}
 [data-tema="escuro"] .etiqueta-procurando { background: #473517; color: #ffda82; border-color: #8b6a34; }
 [data-tema="escuro"] .etiqueta-retirada { background: #213c5f; color: #c5deff; border-color: #5278a3; }
 [data-tema="escuro"] .etiqueta-devolvido { background: #214537; color: #bcebd0; border-color: #57856f; }

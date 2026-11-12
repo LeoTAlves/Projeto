@@ -114,8 +114,8 @@ export default function Triagem({ aviso, aoRegistrar }) {
   return (
     <div className="painel-retirada">
       <strong>Possíveis avisos de perda</strong>
-      <p>Confira os detalhes de cada aviso. Se houver vários objetos semelhantes em mãos, selecione um aviso para cada objeto.</p>
-      <form className="formulario" onSubmit={(evento) => {
+      <p>Compare os avisos abaixo. Para vários objetos físicos, selecione um aviso por objeto.</p>
+      <form className="formulario busca-triagem" onSubmit={(evento) => {
         evento.preventDefault();
         setSugestoesIA(null);
         setMensagemIA('');
@@ -159,15 +159,19 @@ export default function Triagem({ aviso, aoRegistrar }) {
                       }} />
                     Selecionar aviso #{candidato.id}
                   </label>
-                  <button type="button" disabled={registrando || selecionados.length > 0}
-                    onClick={() => registrar([candidato.id])}>Registrar como encontrado</button>
+                  {selecionados.length === 0 && (
+                    <button type="button" disabled={registrando}
+                      onClick={() => registrar([candidato.id])}>Registrar como encontrado</button>
+                  )}
                 </li>
               ))}
             </ul>
-            <button type="button" disabled={registrando || selecionados.length === 0}
-              onClick={() => registrar(selecionados)}>
-              {registrando ? 'Registrando...' : 'Registrar selecionados (' + selecionados.length + ')'}
-            </button>
+            {selecionados.length > 0 && (
+              <button className="acao-triagem-lote" type="button" disabled={registrando}
+                onClick={() => registrar(selecionados)}>
+                {registrando ? 'Registrando...' : 'Registrar selecionados (' + selecionados.length + ')'}
+              </button>
+            )}
             </>
           )}
         </div>

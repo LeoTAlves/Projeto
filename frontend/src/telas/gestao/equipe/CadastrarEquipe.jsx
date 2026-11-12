@@ -38,11 +38,10 @@ function CadastrarEquipe() {
 
   return (
     <section className="cartao">
-      <h3>Cadastrar equipe</h3>
-      <p>Cadastre quem atenderá no balcão. A nova conta terá acesso aos avisos e às ocorrências.</p>
+      <h2 className="titulo-atendimento">Cadastrar membro da equipe</h2>
+      <p className="texto-apoio">A nova conta terá acesso aos atendimentos do balcão.</p>
       <form onSubmit={cadastrar} className="formulario">
         <fieldset disabled={enviando} className="formulario cadastro-equipe">
-          <legend>Dados do novo membro</legend>
           <label>
             Nome
             <input required minLength={3} maxLength={100} value={nome}

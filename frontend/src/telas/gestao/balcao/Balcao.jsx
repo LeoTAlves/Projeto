@@ -1,106 +1,124 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { listarAvisos } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
-import Situacao, { LegendaSituacoes, situacaoDoAviso } from '../../../componentes/Situacao';
-import Triagem from './Triagem';
+import Situacao, { situacaoDoAviso } from '../../../componentes/Situacao';
+import Ocorrencia from '../ocorrencia/Ocorrencia';
 
-// A tela do balcão filtra avisos por pavilhão e mostra o histórico rápido para a equipe.
-function Balcao({ aoAbrirAviso }) {
+const filas = [
+  ['', 'Todos os avisos'],
+  ['triagem', 'Para triar'],
+  ['conferencia', 'Em conferência'],
+  ['retirada', 'Prontos para retirada'],
+];
+
+// O cartão indica a próxima tarefa para que a equipe escolha o aviso em um clique.
+function acaoDoAviso(aviso) {
+  if (aviso.situacao === 'procurando') return 'Registrar achado';
+  if (aviso.situacao !== 'aguardando retirada') return 'Ver atendimento';
+  if (aviso.visitante_id == null) return 'Triar objeto';
+  return aviso.retirada_aprovada ? 'Entregar objeto' : 'Conferir propriedade';
+}
+
+// A fila conserva seus filtros e sua página quando a pessoa abre e fecha um aviso.
+export default function Balcao({ avisoInicial }) {
   const [pavilhao, setPavilhao] = useState('');
   const [pagina, setPagina] = useState(1);
   const [avisos, setAvisos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
-  const [triagemId, setTriagemId] = useState(null);
-  const [mensagemTriagem, setMensagemTriagem] = useState('');
+  const [avisoId, setAvisoId] = useState(avisoInicial || null);
+  const [numero, setNumero] = useState('');
   const [pendencia, setPendencia] = useState('');
-
-  function atualizarTriagem(achadoId, registrados) {
-    const atualizados = new Map(registrados.map((aviso) => [aviso.id, aviso]));
-    setAvisos((atuais) => atuais.map((aviso) => aviso.id === achadoId
-      ? { ...aviso, situacao: 'triado' }
-      : atualizados.get(aviso.id) || aviso));
-    setTriagemId(null);
-    setMensagemTriagem('Achado registrado nos avisos ' + registrados.map((aviso) => '#' + aviso.id).join(', ')
-      + '. Abra o atendimento para imprimir a etiqueta de cada objeto.');
-  }
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
+    if (avisoId) return;
+    let ativa = true;
     setCarregando(true);
     setErro('');
     listarAvisos({ pavilhao, pagina, pendencia })
-      .then((resultado) => setAvisos(resultado))
-      .catch((erroBusca) => setErro(erroBusca.message))
-      .finally(() => setCarregando(false));
-  }, [pavilhao, pagina, pendencia]);
+      .then((resultado) => { if (ativa) setAvisos(resultado); })
+      .catch((falha) => { if (ativa) setErro(falha.message); })
+      .finally(() => { if (ativa) setCarregando(false); });
+    return () => { ativa = false; };
+  }, [pavilhao, pagina, pendencia, avisoId, tentativa]);
+
+  if (avisoId) {
+    return <Ocorrencia key={avisoId} avisoId={avisoId}
+      aoAbrirAviso={setAvisoId} aoVoltar={() => { setCarregando(true); setAvisoId(null); }} />;
+  }
 
   return (
     <section className="cartao">
-      <h3>O balcão</h3>
-      <p className="texto-apoio">Um lugar para acompanhar cada aviso e o próximo reencontro.</p>
-      <LegendaSituacoes />
-      <label className="filtro-pavilhao">
-        Fila de atendimento
-        <select value={pendencia} onChange={(evento) => {
-          setPendencia(evento.target.value);
-          setPagina(1);
+      <h2 className="titulo-atendimento">Atendimentos</h2>
+      <div className="filtros-atendimento">
+        <form className="busca-aviso" onSubmit={(evento) => {
+          evento.preventDefault();
+          const id = Number(numero);
+          if (Number.isSafeInteger(id) && id > 0) setAvisoId(id);
         }}>
-          <option value="">Todos os avisos</option>
-          <option value="triagem">Achados sem triagem</option>
-          <option value="conferencia">Em conferência</option>
-          <option value="retirada">Retiradas aprovadas</option>
-        </select>
-      </label>
-      {mensagemTriagem && <p className="mensagem sucesso" role="status">{mensagemTriagem}</p>}
-      <label className="filtro-pavilhao">
-        Filtrar por pavilhão
-        <select value={pavilhao} onChange={(evento) => { setPavilhao(evento.target.value); setPagina(1); }}>
-          <option value="">Todos os pavilhões</option>
-          <option value="Pavilhao 1">Pavilhão 1</option>
-          <option value="Pavilhao 2">Pavilhão 2</option>
-          <option value="Pavilhao 3">Pavilhão 3</option>
-        </select>
-      </label>
+          <label>
+            Número do aviso ou da etiqueta
+            <input type="text" inputMode="numeric" required pattern="[0-9]+" maxLength={15}
+              placeholder="Ex. 123" value={numero}
+              onChange={(evento) => {
+                evento.target.setCustomValidity(Number(evento.target.value) === 0 && evento.target.value
+                  ? 'Informe um número maior que zero.' : '');
+                setNumero(evento.target.value);
+              }} />
+          </label>
+          <button type="submit">Abrir aviso</button>
+        </form>
+        <label>
+          Pavilhão
+          <select value={pavilhao} onChange={(evento) => { setPavilhao(evento.target.value); setPagina(1); }}>
+            <option value="">Todos os pavilhões</option>
+            <option value="Pavilhao 1">Pavilhão 1</option>
+            <option value="Pavilhao 2">Pavilhão 2</option>
+            <option value="Pavilhao 3">Pavilhão 3</option>
+          </select>
+        </label>
+      </div>
+      <div className="navegacao filtros-fila" role="group" aria-label="Filtrar por etapa do atendimento">
+        {filas.map(([valor, rotulo]) => (
+          <button key={valor} type="button" aria-pressed={pendencia === valor}
+            className={pendencia === valor ? 'ativo' : ''}
+            onClick={() => { setPendencia(valor); setPagina(1); }}>{rotulo}</button>
+        ))}
+      </div>
 
       {carregando ? (
-        <p>Carregando avisos do balcão...</p>
+        <p role="status">Carregando atendimentos...</p>
       ) : erro ? (
-        <p className="erro">{erro}</p>
+        <>
+          <p className="mensagem erro" role="alert">{erro}</p>
+          <button type="button" className="botao-secundario"
+            onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</button>
+        </>
+      ) : avisos.length === 0 ? (
+        <p>Nenhum aviso para os filtros selecionados.</p>
       ) : (
-        avisos.length === 0 ? (
-          <p>Nenhum aviso encontrado para esse filtro.</p>
-        ) : (
-          <ul className="lista-avisos lista-balcao">
-            {avisos.map((aviso) => (
-              <li key={aviso.id}>
-                <div className="aviso-topo"><span className="aviso-numero">Aviso #{aviso.id}</span><Situacao valor={situacaoDoAviso(aviso)} /></div>
-                <strong>{aviso.descricao}</strong>
-                {aviso.categoria && <span>{aviso.categoria} · {[aviso.cor, aviso.marca].filter(Boolean).join(' · ')}</span>}
-                <span className="aviso-metadados">{aviso.pavilhao} · Noite {aviso.noite} · {aviso.visitante_id == null ? 'Sem visitante vinculado' : 'Visitante ' + aviso.visitante_id}</span>
-                {aviso.local_guarda && <small>Local de guarda · {aviso.local_guarda} · Etiqueta #{aviso.id}</small>}
-                {aviso.recebido_por && <small>Recebido por {aviso.recebido_por}</small>}
-                {aviso.situacao_desde && (
-                  <small>Nesta situação há {Math.max(0, Math.floor((Date.now() - Date.parse(aviso.situacao_desde)) / 60000))} min</small>
-                )}
-                <button type="button" className="botao-secundario"
-                  onClick={() => aoAbrirAviso(aviso.id)}>Abrir atendimento #{aviso.id}</button>
-                {aviso.visitante_id == null && aviso.situacao === 'aguardando retirada' && (
-                  <>
-                    <button type="button" className="botao-secundario" aria-expanded={triagemId === aviso.id}
-                      onClick={() => setTriagemId(triagemId === aviso.id ? null : aviso.id)}>
-                      {triagemId === aviso.id ? 'Fechar triagem' : 'Triar objeto'}
-                    </button>
-                    {triagemId === aviso.id && <Triagem key={aviso.id} aviso={aviso} aoRegistrar={atualizarTriagem} />}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        )
+        <ul className="lista-avisos lista-balcao">
+          {avisos.map((aviso) => (
+            <li key={aviso.id}>
+              <div className="aviso-topo">
+                <span className="aviso-numero">Aviso #{aviso.id}</span>
+                <Situacao valor={situacaoDoAviso(aviso)} />
+              </div>
+              <strong>{aviso.descricao}</strong>
+              <span className="aviso-metadados">
+                {[aviso.pavilhao, aviso.categoria, aviso.local_guarda].filter(Boolean).join(' · ')}
+              </span>
+              <button type="button" className="botao-secundario"
+                aria-label={acaoDoAviso(aviso) + ' · aviso #' + aviso.id}
+                onClick={() => setAvisoId(aviso.id)}>{acaoDoAviso(aviso)}</button>
+            </li>
+          ))}
+        </ul>
       )}
-      <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando} aoMudar={setPagina} />
+      {!erro && (pagina > 1 || avisos.length >= 10) && (
+        <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando} aoMudar={setPagina} />
+      )}
     </section>
   );
 }
-
-export default Balcao;
