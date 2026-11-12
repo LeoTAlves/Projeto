@@ -1,11 +1,13 @@
 ﻿import { useEffect, useState } from 'react';
-import { criarOcorrencia, listarAvisos } from '../../../servicos/api';
+import { buscarAviso, criarOcorrencia, listarAvisos } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
-import Situacao from '../../../componentes/Situacao';
+import Situacao, { situacaoDoAviso } from '../../../componentes/Situacao';
+import EtiquetaObjeto from '../../../componentes/EtiquetaObjeto';
 import VincularDono from './VincularDono';
+import ConferirRetirada from './ConferirRetirada';
 
 // A tela de ocorrência registra um achado ou uma devolução em um aviso específico da equipe.
-function Ocorrencia() {
+function Ocorrencia({ avisoInicial }) {
   const [pagina, setPagina] = useState(1);
   const [avisoId, setAvisoId] = useState('');
   const [tipo, setTipo] = useState('objeto achado');
@@ -16,6 +18,13 @@ function Ocorrencia() {
   const [erro, setErro] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [enviando, setEnviando] = useState(false);
+  const [historico, setHistorico] = useState([]);
+  const [erroHistorico, setErroHistorico] = useState('');
+
+  function atualizarAviso(atualizado) {
+    setAvisos((atuais) => atuais.map((aviso) => aviso.id === atualizado.id ? atualizado : aviso));
+    setCodigoRetirada('');
+  }
 
   // O formulário precisa dos avisos existentes para permitir escolher o registro correto.
   useEffect(() => {
@@ -25,18 +34,23 @@ function Ocorrencia() {
     setErro(false);
     setMensagem('');
     listarAvisos({ pagina })
-      .then((resultado) => {
+      .then(async (resultado) => {
+        const abrir = pagina === 1 && avisoInicial;
+        if (abrir && !resultado.some((aviso) => aviso.id === avisoInicial)) {
+          const extra = await buscarAviso(avisoInicial);
+          resultado = [extra, ...resultado];
+        }
         setAvisos(resultado);
-        const avisoAberto = resultado.find((aviso) => !['devolvido', 'triado'].includes(aviso.situacao));
+        const avisoAberto = resultado.find((aviso) => !['devolvido', 'triado', 'cancelado'].includes(aviso.situacao));
         const primeiroAviso = avisoAberto || resultado[0];
-        if (primeiroAviso) setAvisoId(String(primeiroAviso.id));
+        if (abrir || primeiroAviso) setAvisoId(String(abrir || primeiroAviso.id));
       })
       .catch((falha) => {
         setErro(true);
         setMensagem(falha.message);
       })
       .finally(() => setCarregando(false));
-  }, [pagina]);
+  }, [pagina, avisoInicial]);
 
   // O envio registra a ocorrência e recarrega a lista para exibir a situação atualizada.
   const enviarOcorrencia = (evento) => {
@@ -54,8 +68,8 @@ function Ocorrencia() {
         setMensagem(`Ocorrência registrada com sucesso. Código ${resultado.id}.`);
         setDescricao('');
         setCodigoRetirada('');
-        return listarAvisos({ pagina })
-          .then((avisosAtualizados) => setAvisos(avisosAtualizados))
+        return buscarAviso(Number(avisoId))
+          .then(atualizarAviso)
           .catch((falhaAtualizacao) => {
             setErro(true);
             setMensagem(`Ocorrência registrada, mas a lista não pôde ser atualizada: ${falhaAtualizacao.message}`);
@@ -72,7 +86,19 @@ function Ocorrencia() {
   const avisoSelecionado = avisos.find((aviso) => String(aviso.id) === avisoId);
   const devolucao = tipo === 'devolucao';
   const podeDevolver = avisoSelecionado?.situacao === 'aguardando retirada'
-    && avisoSelecionado.visitante_id != null;
+    && avisoSelecionado.retirada_aprovada;
+
+  useEffect(() => {
+    let ativa = true;
+    setHistorico([]);
+    setErroHistorico('');
+    if (avisoId) {
+      buscarAviso(avisoId)
+        .then((aviso) => { if (ativa) setHistorico(aviso.ocorrencias); })
+        .catch((falha) => { if (ativa) setErroHistorico(falha.message); });
+    }
+    return () => { ativa = false; };
+  }, [avisoId, avisoSelecionado]);
 
   if (carregando) {
     return <section className="cartao"><p>Carregando avisos para ocorrência...</p></section>;
@@ -101,15 +127,21 @@ function Ocorrencia() {
           {avisoSelecionado && (
             <div className="situacao-atual">
               <span>Situação atual</span>
-              <Situacao valor={avisoSelecionado.situacao} />
+              <Situacao valor={situacaoDoAviso(avisoSelecionado)} />
               {avisoSelecionado.visitante_id != null && <small>Visitante #{avisoSelecionado.visitante_id}</small>}
+              {avisoSelecionado.local_guarda && <small>Local de guarda · {avisoSelecionado.local_guarda} · Etiqueta #{avisoSelecionado.id}</small>}
+              {avisoSelecionado.recebido_por && <small>Recebido por {avisoSelecionado.recebido_por}</small>}
             </div>
+          )}
+          {avisoSelecionado?.situacao === 'aguardando retirada' && (
+            <EtiquetaObjeto key={avisoSelecionado.id} aviso={avisoSelecionado} />
           )}
           {avisoSelecionado?.situacao === 'aguardando retirada' && avisoSelecionado.visitante_id == null && (
             <VincularDono key={avisoSelecionado.id} avisoId={avisoSelecionado.id}
-              aoVincular={(atualizado) => setAvisos((atuais) => atuais.map(
-                (aviso) => aviso.id === atualizado.id ? atualizado : aviso
-              ))} />
+              aoVincular={atualizarAviso} />
+          )}
+          {avisoSelecionado?.situacao === 'aguardando retirada' && avisoSelecionado.visitante_id != null && (
+            <ConferirRetirada key={avisoSelecionado.id} aviso={avisoSelecionado} aoAtualizar={atualizarAviso} />
           )}
 
           <label>
@@ -133,7 +165,7 @@ function Ocorrencia() {
               <small>Peça ao visitante para abrir Meus avisos e mostrar o código deste objeto.</small>
             </label>
           ) : (
-            <p className="texto-apoio">Para devolver, o objeto deve estar aguardando retirada e vinculado ao visitante.</p>
+            <p className="texto-apoio">A retirada precisa ser aprovada antes da devolução.</p>
           ))}
 
           <label>
@@ -149,7 +181,7 @@ function Ocorrencia() {
             />
           </label>
 
-          <button type="submit" disabled={enviando || !avisoId || ['devolvido', 'triado'].includes(avisoSelecionado?.situacao) || (devolucao && !podeDevolver)}>
+          <button type="submit" disabled={enviando || (devolucao ? !podeDevolver : avisoSelecionado?.situacao !== 'procurando')}>
             {enviando ? 'Registrando...' : 'Registrar ocorrência'}
           </button>
         </form>
@@ -157,6 +189,22 @@ function Ocorrencia() {
 
       <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando || enviando} aoMudar={setPagina} />
       {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem sucesso'} role="status">{mensagem}</p>}
+      {erroHistorico && <p className="mensagem erro" role="alert">{erroHistorico}</p>}
+      {historico.length > 0 && (
+        <section aria-label="Histórico do atendimento">
+          <h4>Histórico do atendimento</h4>
+          <ul className="lista-ocorrencias">
+            {historico.map((evento) => (
+              <li key={evento.id}>
+                <Situacao valor={evento.tipo} />
+                <span>{evento.descricao}</span>
+                <small>{evento.atendente && evento.atendente + ' · '}
+                  {evento.registrada_em ? new Date(evento.registrada_em).toLocaleString('pt-BR') : evento.data}</small>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </section>
   );
 }

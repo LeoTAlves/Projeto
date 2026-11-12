@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import { buscarUsuarioAtual, criarConta, limparSessao, login, salvarToken } from './servicos/api';
+import { buscarUsuarioAtual, confirmarEmail, criarConta, limparSessao, login, salvarToken } from './servicos/api';
 import RegistrarPerda from './telas/pessoa/registrar-perda/RegistrarPerda';
 import MeusAvisos from './telas/pessoa/meus-avisos/MeusAvisos';
 import Balcao from './telas/gestao/balcao/Balcao';
@@ -27,6 +27,9 @@ function App() {
   const [carregandoSessao, setCarregandoSessao] = useState(true);
   const [carregandoLogin, setCarregandoLogin] = useState(false);
   const [carregandoCadastro, setCarregandoCadastro] = useState(false);
+  const [segundoFator, setSegundoFator] = useState(null);
+  const [codigoLogin, setCodigoLogin] = useState('');
+  const [avisoParaAbrir, setAvisoParaAbrir] = useState(null);
 
   // O tema acompanha a pessoa na entrada e nas telas autenticadas.
   useEffect(() => {
@@ -59,22 +62,45 @@ function App() {
 
   useEffect(() => {
     carregarUsuario();
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get('confirmar_email');
+    if (token) {
+      url.searchParams.delete('confirmar_email');
+      window.history.replaceState(null, '', url);
+      confirmarEmail(token)
+        .then(() => setMensagemCadastro('E-mail confirmado. Entre com sua conta.'))
+        .catch((falha) => setErroLogin(falha.message));
+    }
   }, []);
 
-  const entrar = async (evento) => {
+  const entrar = async (evento, reenviar = false) => {
     evento.preventDefault();
     setErroLogin('');
     setMensagemCadastro('');
     setCarregandoLogin(true);
 
     try {
-      const resultado = await login({ email, senha });
+      const resultado = await login({
+        email, senha, codigo: codigoLogin || undefined, desafio: segundoFator?.desafio,
+        reenviar_confirmacao: reenviar,
+      });
+      if (resultado.etapa) {
+        setSegundoFator(resultado);
+        if (resultado.etapa === 'email_pendente') {
+          setMensagemCadastro(reenviar
+            ? 'Confira a caixa de entrada. O reenvio fica disponível a cada minuto.'
+            : 'Confirme seu e-mail pelo link enviado no cadastro.');
+        }
+        return;
+      }
       salvarToken(resultado.access_token);
       const usuarioAtual = await buscarUsuarioAtual();
       setUsuario(usuarioAtual);
       setTela(usuarioAtual.tipo === 'visitante' ? 'registrar' : 'balcao');
       setEmail('');
       setSenha('');
+      setSegundoFator(null);
+      setCodigoLogin('');
     } catch (erro) {
       limparSessao();
       setUsuario(null);
@@ -101,7 +127,7 @@ function App() {
       setNomeCadastro('');
       setSenha('');
       setConfirmarSenha('');
-      setMensagemCadastro('Conta criada! Entre com seu e-mail e senha.');
+      setMensagemCadastro('Conta criada. Confirme seu e-mail pelo link que enviamos.');
     } catch (erro) {
       setErroLogin(erro.message || 'Não foi possível criar sua conta.');
     } finally {
@@ -116,6 +142,8 @@ function App() {
     setSenha('');
     setConfirmarSenha('');
     setMostrarSenha(false);
+    setSegundoFator(null);
+    setCodigoLogin('');
   };
 
   const sair = () => {
@@ -126,6 +154,8 @@ function App() {
     setSenha('');
     setErroLogin('');
     setMostrarSenha(false);
+    setSegundoFator(null);
+    setCodigoLogin('');
   };
 
   if (carregandoSessao) {
@@ -182,7 +212,7 @@ function App() {
                 required
                 type="email"
                 value={email}
-                onChange={(evento) => setEmail(evento.target.value)}
+                onChange={(evento) => { setEmail(evento.target.value); setSegundoFator(null); setCodigoLogin(''); }}
                 placeholder="nome@email.com"
                 autoComplete="email"
               />
@@ -197,7 +227,7 @@ function App() {
                   type={mostrarSenha ? 'text' : 'password'}
                   minLength={modoCadastro ? 8 : undefined}
                   value={senha}
-                  onChange={(evento) => setSenha(evento.target.value)}
+                  onChange={(evento) => { setSenha(evento.target.value); setSegundoFator(null); setCodigoLogin(''); }}
                   placeholder="Sua senha"
                   autoComplete={modoCadastro ? 'new-password' : 'current-password'}
                 />
@@ -230,6 +260,27 @@ function App() {
               </label>
             )}
 
+            {!modoCadastro && segundoFator?.etapa === 'email_pendente' && (
+              <button type="button" className="botao-secundario" disabled={carregandoLogin}
+                onClick={(evento) => entrar(evento, true)}>Reenviar confirmação</button>
+            )}
+            {!modoCadastro && segundoFator && segundoFator.etapa !== 'email_pendente' && (
+              <>
+                {segundoFator.etapa === 'configurar_autenticador' && (
+                  <div className="painel-retirada">
+                    <p>Adicione esta chave ao seu aplicativo autenticador como conta baseada em tempo.</p>
+                    <code className="codigo-retirada">{segundoFator.chave_autenticador}</code>
+                    <button type="button" className="botao-secundario"
+                      onClick={() => { setSegundoFator(null); setCodigoLogin(''); }}>Gerar outra chave</button>
+                  </div>
+                )}
+                <label>
+                  Código do autenticador
+                  <input required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}"
+                    value={codigoLogin} maxLength={6} onChange={(evento) => setCodigoLogin(evento.target.value)} />
+                </label>
+              </>
+            )}
             <button type="submit" disabled={carregandoLogin || carregandoCadastro}>
               {modoCadastro
                 ? (carregandoCadastro ? 'Criando conta...' : 'Criar conta')
@@ -317,11 +368,13 @@ function App() {
       </nav>
 
       <main className="conteudo-principal">
-        {usuario.tipo === 'visitante' && tela === 'registrar' && <RegistrarPerda visitanteId={usuario.id} />}
-        {usuario.tipo === 'visitante' && tela === 'meus' && <MeusAvisos visitanteId={usuario.id} />}
-        {podeOperarBalcao && tela === 'balcao' && <Balcao />}
+        {usuario.tipo === 'visitante' && tela === 'registrar' && <RegistrarPerda visitanteId={usuario.id}
+          aoAbrirAviso={(id) => { setAvisoParaAbrir(id); setTela('meus'); }} />}
+        {usuario.tipo === 'visitante' && tela === 'meus' && <MeusAvisos visitanteId={usuario.id} avisoInicial={avisoParaAbrir} />}
+        {podeOperarBalcao && tela === 'balcao' && <Balcao
+          aoAbrirAviso={(id) => { setAvisoParaAbrir(id); setTela('ocorrencia'); }} />}
         {podeOperarBalcao && tela === 'registrar-balcao' && <RegistrarPerda peloBalcao />}
-        {podeOperarBalcao && tela === 'ocorrencia' && <Ocorrencia />}
+        {podeOperarBalcao && tela === 'ocorrencia' && <Ocorrencia avisoInicial={avisoParaAbrir} />}
         {administrador && tela === 'equipe' && <CadastrarEquipe />}
       </main>
       <footer className="rodape">Cadê!? <span>Achados, perdidos e reencontros.</span></footer>

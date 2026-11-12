@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from banco import obter_sessao
-from esquemas.usuario import UsuarioCadastro, UsuarioCriar, UsuarioSaida
+from esquemas.usuario import ConfirmacaoEmail, UsuarioCadastro, UsuarioCriar, UsuarioSaida
 from rotas.autenticacao import GRUPO_ADMIN, GRUPO_EQUIPE, exigir_grupo
 from servicos.usuario import criar_usuario, listar_usuarios, obter_usuario_atual
+from servicos.acesso import confirmar_email
 
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
@@ -24,10 +25,15 @@ def listar_usuarios_rota(
 
 @router.post("/cadastro", response_model=UsuarioSaida, status_code=status.HTTP_201_CREATED)
 def cadastrar_usuario_rota(dados: UsuarioCadastro, sessao=Depends(obter_sessao)):
-    usuario = criar_usuario(sessao, {**dados.model_dump(), "tipo": "visitante"})
+    usuario = criar_usuario(sessao, {**dados.model_dump(), "tipo": "visitante"}, confirmar_cadastro=True)
     if isinstance(usuario, str):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=usuario)
     return usuario
+
+
+@router.post("/confirmar-email", status_code=204)
+def confirmar_email_rota(dados: ConfirmacaoEmail, sessao=Depends(obter_sessao)):
+    confirmar_email(sessao, dados.token)
 
 
 # Só o administrador cadastra contas internas; o serviço existente aplica o hash da senha.
@@ -37,7 +43,7 @@ def criar_usuario_rota(
     usuario=Depends(exigir_grupo(GRUPO_ADMIN)),
     sessao=Depends(obter_sessao),
 ):
-    usuario = criar_usuario(sessao, dados.model_dump())
+    usuario = criar_usuario(sessao, dados.model_dump(), confirmar_cadastro=dados.tipo == "visitante")
     if isinstance(usuario, str):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=usuario)
     return usuario

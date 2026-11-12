@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Literal
-from datetime import date
+from datetime import date, datetime
 
 # O schema de ocorrência de entrada recebe o tipo e a descrição do achado ou da devolução.
 class OcorrenciaCriar(BaseModel):
@@ -12,6 +12,8 @@ class OcorrenciaCriar(BaseModel):
 class OcorrenciaSaida(BaseModel):
     id: int
     aviso_id: int
-    tipo: Literal["objeto achado", "devolucao"]
+    tipo: Literal["objeto achado", "devolucao", "retirada aprovada", "vinculo corrigido"]
     descricao: str
     data: date  # O DATE do banco aparece como AAAA-MM-DD no JSON.
+    atendente: str | None = None
+    registrada_em: datetime | None = None

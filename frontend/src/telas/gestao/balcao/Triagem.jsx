@@ -1,5 +1,36 @@
 import { useEffect, useState } from 'react';
-import { buscarCorrespondencias, registrarAchadosDaTriagem } from '../../../servicos/api';
+import { buscarAviso, buscarCorrespondencias, registrarAchadosDaTriagem, sugerirAtributos, sugerirCorrespondencias } from '../../../servicos/api';
+
+const campos = [
+  ['Descrição', 'descricao'], ['Categoria', 'categoria'], ['Cor', 'cor'],
+  ['Marca', 'marca'], ['Pavilhão', 'pavilhao'], ['Noite', 'noite'],
+];
+
+function CompararObjetos({ achado, perda }) {
+  return (
+    <div className="triagem-comparacao">
+      {[[achado, 'Objeto recebido'], [perda, 'Aviso de perda']].map(([objeto, titulo]) => (
+        <div key={titulo}>
+          <strong>{titulo}</strong>
+          <dl>
+            {campos.map(([rotulo, chave]) => {
+              const valor = objeto[chave];
+              const outro = (objeto === achado ? perda : achado)[chave];
+              const diverge = chave !== 'descricao' && valor && outro
+                && valor.trim().toLowerCase() !== outro.trim().toLowerCase();
+              return (
+                <div key={chave}>
+                  <dt>{rotulo}</dt>
+                  <dd>{valor || 'Não informado'}{diverge && <small> · Difere</small>}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // Cada busca compara o achado com as perdas abertas sem alterar os avisos.
 export default function Triagem({ aviso, aoRegistrar }) {
@@ -11,6 +42,44 @@ export default function Triagem({ aviso, aoRegistrar }) {
   const [erroRegistro, setErroRegistro] = useState('');
   const [selecionados, setSelecionados] = useState([]);
   const [registrando, setRegistrando] = useState(false);
+  const [consultandoIA, setConsultandoIA] = useState(false);
+  const [sugestoesIA, setSugestoesIA] = useState(null);
+  const [mensagemIA, setMensagemIA] = useState('');
+
+  async function buscarComIA() {
+    setConsultandoIA(true);
+    setMensagemIA('');
+    setSelecionados([]);
+    setErroRegistro('');
+    setSugestoesIA(null);
+    try {
+      const preenchidos = [aviso.categoria, aviso.cor, aviso.marca].filter(Boolean);
+      const extras = preenchidos.length < 2 ? await sugerirAtributos(aviso.descricao) : {};
+      const resultado = await sugerirCorrespondencias({
+        categoria: aviso.categoria || extras.categoria,
+        cor: aviso.cor || extras.cor,
+        marca: aviso.marca || extras.marca,
+        caracteristicas_distintivas: aviso.descricao, pavilhao: aviso.pavilhao, noite: aviso.noite,
+      });
+      const sugestoes = resultado.correspondencias.filter((item) => !item.bloqueado).slice(0, 10);
+      const detalhes = await Promise.allSettled(sugestoes.map(async (item) => {
+        const perda = await buscarAviso(item.aviso_id);
+        return { ...perda, explicacao: item.explicacao };
+      }));
+      const abertas = detalhes.filter((item) => item.status === 'fulfilled' && item.value.situacao === 'procurando')
+        .map((item) => item.value);
+      if (abertas.length) setSugestoesIA(abertas);
+      setMensagemIA(abertas.length ? (resultado.origem === 'local'
+        ? 'Sugestões pela comparação local. O provedor de IA está indisponível.'
+        : 'Sugestões da IA para conferência.')
+        : sugestoes.length ? 'Os avisos sugeridos não estão mais disponíveis. Confira a busca por texto.'
+          : resultado.mensagem);
+    } catch (falha) {
+      setMensagemIA(falha.message + ' Você pode continuar pela busca por texto.');
+    } finally {
+      setConsultandoIA(false);
+    }
+  }
 
   useEffect(() => {
     let ativa = true;
@@ -40,12 +109,16 @@ export default function Triagem({ aviso, aoRegistrar }) {
     }
   }
 
+  const resultados = sugestoesIA || candidatos;
+
   return (
     <div className="painel-retirada">
       <strong>Possíveis avisos de perda</strong>
       <p>Confira os detalhes de cada aviso. Se houver vários objetos semelhantes em mãos, selecione um aviso para cada objeto.</p>
       <form className="formulario" onSubmit={(evento) => {
         evento.preventDefault();
+        setSugestoesIA(null);
+        setMensagemIA('');
         setConsulta({ texto: texto.trim() });
       }}>
         <label>
@@ -53,27 +126,31 @@ export default function Triagem({ aviso, aoRegistrar }) {
           <input value={texto} maxLength={200} onChange={(evento) => setTexto(evento.target.value)}
             placeholder="Em branco, busca pela descrição do achado" />
         </label>
-        <button type="submit" disabled={carregando || registrando}>Buscar avisos</button>
+        <button type="submit" disabled={carregando || registrando || consultandoIA}>Buscar por texto</button>
+        <button type="button" className="botao-secundario" disabled={carregando || registrando || consultandoIA}
+          onClick={buscarComIA}>{consultandoIA ? 'Consultando IA...' : 'Buscar sugestões com IA'}</button>
       </form>
+      {mensagemIA && <p role="status">{mensagemIA}</p>}
       {carregando && <p role="status">Comparando avisos em aberto...</p>}
       {erro && <p className="mensagem erro" role="alert">{erro}</p>}
       {erroRegistro && <p className="mensagem erro" role="alert">{erroRegistro}</p>}
-      {!carregando && !erro && (
+      {!carregando && !consultandoIA && (!erro || sugestoesIA) && (
         <div>
-          <p role="status">{candidatos.length === 0
+          <p role="status">{resultados.length === 0
             ? 'Nenhuma correspondência encontrada. Tente palavras como tipo, cor ou marca.'
-            : candidatos.length + ' aviso(s) com termos em comum.'}</p>
-          {candidatos.length > 0 && (
+            : resultados.length + ' aviso(s) para conferência.'}</p>
+          {resultados.length > 0 && (
             <>
             <ul className="lista-avisos">
-              {candidatos.map((candidato) => (
+              {resultados.map((candidato) => (
                 <li key={candidato.id}>
                   <span className="aviso-numero">Aviso #{candidato.id} · Visitante #{candidato.visitante_id}</span>
-                  <strong>{candidato.descricao}</strong>
-                  <span className="aviso-metadados">{candidato.pavilhao} · Noite {candidato.noite}</span>
-                  <small>Em comum: {candidato.termos_em_comum.join(', ')}</small>
+                  <CompararObjetos achado={aviso} perda={candidato} />
+                  {candidato.termos_em_comum?.length > 0 && <small>Em comum: {candidato.termos_em_comum.join(', ')}</small>}
+                  {candidato.explicacao && <small>{candidato.explicacao}</small>}
                   <label className="triagem-selecao">
-                    <input type="checkbox" checked={selecionados.includes(candidato.id)} disabled={registrando}
+                    <input type="checkbox" checked={selecionados.includes(candidato.id)}
+                      disabled={registrando || (selecionados.length >= 100 && !selecionados.includes(candidato.id))}
                       onChange={(evento) => {
                         const marcado = evento.target.checked;
                         setSelecionados((atuais) => marcado

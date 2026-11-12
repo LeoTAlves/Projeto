@@ -19,9 +19,12 @@ def listar(sessao):
     return sessao.scalars(consulta).all()
 
 
-def salvar(sessao, dados):
+def salvar(sessao, dados, antes_de_confirmar=None):
     usuario = Usuario(**dados)
     sessao.add(usuario)
+    if antes_de_confirmar:
+        sessao.flush()
+        antes_de_confirmar(usuario)
     sessao.commit()
     sessao.refresh(usuario)
     return usuario

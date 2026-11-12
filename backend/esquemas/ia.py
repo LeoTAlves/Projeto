@@ -40,6 +40,7 @@ class SugestaoIAResposta(BaseModel):
     situacao: Literal["sugerida", "informacoes_insuficientes", "sem_correspondencias"]
     mensagem: str = Field(min_length=1, max_length=500)
     correspondencias: list[CorrespondenciaIAResposta] = Field(default_factory=list)
+    origem: Literal["provedor", "local"] = "provedor"
 
 
 class SugestaoIAModelo(BaseModel):

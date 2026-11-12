@@ -28,12 +28,22 @@ def bloquear_avisos(sessao, ids):
 
 
 # WHERE, ORDER BY, LIMIT e OFFSET são executados no MySQL, antes de trazer as linhas.
-def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1):
+def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=None):
     consulta = select(Aviso).order_by(Aviso.noite, Aviso.id)
     if pavilhao is not None:
         consulta = consulta.where(Aviso.pavilhao == pavilhao)
     if visitante_id is not None:
         consulta = consulta.where(Aviso.visitante_id == visitante_id)
+    if pendencia:
+        consulta = consulta.where(Aviso.situacao == "aguardando retirada")
+        if pendencia == "triagem":
+            consulta = consulta.where(Aviso.visitante_id.is_(None))
+        else:
+            consulta = consulta.where(Aviso.visitante_id.is_not(None))
+            consulta = consulta.where(
+                Aviso.nonce_retirada.is_not(None) if pendencia == "retirada" else Aviso.nonce_retirada.is_(None)
+            )
+        consulta = consulta.order_by(None).order_by(Aviso.situacao_desde, Aviso.id)
     consulta = consulta.limit(10).offset((pagina - 1) * 10)
     return sessao.scalars(consulta).all()
 
@@ -56,5 +66,12 @@ def percorrer_perdas_abertas(sessao):
 
 
 def listar_avisos_para_sugestao(sessao):
-    consulta = select(Aviso).order_by(Aviso.id)
-    return sessao.scalars(consulta).all()
+    return list(percorrer_perdas_abertas(sessao))
+
+
+def perdas_do_visitante(sessao, visitante_id):
+    consulta = select(Aviso).where(
+        Aviso.visitante_id == visitante_id,
+        Aviso.situacao.in_(("procurando", "aguardando retirada")),
+    ).order_by(Aviso.id.desc())
+    return sessao.scalars(consulta)

@@ -1,11 +1,15 @@
+from typing import Literal
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
 from banco import obter_sessao
 from esquemas.aviso import AvisoCriar, AvisoDetalhe, AvisoSaida, CodigoRetirada, ConfirmacaoTriagem, CorrespondenciaTriagem, VinculoVisitante
 from rotas.autenticacao import GRUPO_ADMIN, GRUPO_EQUIPE, GRUPO_VISITANTE, exigir_grupo
 from seguranca import gerar_codigo_retirada
-from servicos.aviso import buscar_aviso, confirmar_triagem, criar_aviso as criar_aviso_servico, listar_avisos, registrar_objeto_no_balcao, triar_objeto, vincular_visitante
+from servicos.aviso import buscar_aviso, cancelar_aviso, confirmar_triagem, criar_aviso as criar_aviso_servico, listar_avisos, registrar_objeto_no_balcao, triar_objeto, vincular_visitante
 from servicos.usuario import obter_usuario_atual
+from esquemas.aviso import ConferenciaRetirada, DescricaoObjeto
+from servicos.aviso import aprovar_retirada, corrigir_vinculo, possiveis_duplicados
 
 # O router reúne os caminhos que o visitante e o balcão já utilizam.
 router = APIRouter(prefix="/avisos", tags=["avisos"])
@@ -16,11 +20,21 @@ router = APIRouter(prefix="/avisos", tags=["avisos"])
 def listar_avisos_rotas(
     pavilhao: str | None = Query(default=None, description="Filtra por pavilhão"),
     pagina: int = Query(default=1, ge=1, description="Página de dez avisos"),
+    pendencia: Literal["triagem", "conferencia", "retirada"] | None = None,
     usuario=Depends(obter_usuario_atual),
     sessao=Depends(obter_sessao),
 ):
     dono_id = usuario.id if usuario.tipo == GRUPO_VISITANTE else None
-    return listar_avisos(sessao, pavilhao=pavilhao, visitante_id=dono_id, pagina=pagina)
+    return listar_avisos(sessao, pavilhao, dono_id, pagina, pendencia if dono_id is None else None)
+
+
+@router.post("/possiveis-duplicados", response_model=list[AvisoSaida])
+def consultar_duplicados(
+    dados: DescricaoObjeto,
+    usuario=Depends(exigir_grupo(GRUPO_VISITANTE)),
+    sessao=Depends(obter_sessao),
+):
+    return possiveis_duplicados(sessao, dados.descricao, usuario.id)
 
 
 # O response_model lê os atributos do modelo, incluindo aviso.ocorrencias no detalhe.
@@ -44,7 +58,7 @@ def registrar_objeto_balcao(
     usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
     sessao=Depends(obter_sessao),
 ):
-    return registrar_objeto_no_balcao(sessao, dados.model_dump())
+    return registrar_objeto_no_balcao(sessao, dados.model_dump(), usuario)
 
 
 # A equipe analisa sugestões antes de confirmar o vínculo com um visitante.
@@ -74,7 +88,7 @@ def registrar_triagem(
     usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
     sessao=Depends(obter_sessao),
 ):
-    resultado = confirmar_triagem(sessao, aviso_id, dados.aviso_ids)
+    resultado = confirmar_triagem(sessao, aviso_id, dados.aviso_ids, usuario)
     if resultado is None:
         raise HTTPException(status_code=404, detail="Objeto não encontrado.")
     if isinstance(resultado, str):
@@ -90,11 +104,26 @@ def vincular_dono(
     usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
     sessao=Depends(obter_sessao),
 ):
-    aviso = vincular_visitante(sessao, aviso_id, dados.visitante_id)
+    aviso = vincular_visitante(sessao, aviso_id, dados.visitante_id, usuario)
     if aviso is None:
         raise HTTPException(status_code=404, detail="Aviso não encontrado.")
     if isinstance(aviso, str):
         raise HTTPException(status_code=422, detail=aviso)
+    return aviso
+
+
+# O dono pode encerrar a busca enquanto o aviso está procurando.
+@router.patch("/{aviso_id}/cancelar", response_model=AvisoDetalhe)
+def cancelar_aviso_rotas(
+    aviso_id: int,
+    usuario=Depends(exigir_grupo(GRUPO_VISITANTE)),
+    sessao=Depends(obter_sessao),
+):
+    aviso = cancelar_aviso(sessao, aviso_id, usuario.id)
+    if aviso is None:
+        raise HTTPException(status_code=404, detail="Aviso não encontrado.")
+    if isinstance(aviso, str):
+        raise HTTPException(status_code=409, detail=aviso)
     return aviso
 
 
@@ -107,10 +136,37 @@ def consultar_codigo_retirada(
     sessao=Depends(obter_sessao),
 ):
     aviso = buscar_aviso(sessao, aviso_id, usuario.id)
-    if aviso is None or aviso.situacao != "aguardando retirada":
+    if aviso is None or aviso.situacao != "aguardando retirada" or not aviso.nonce_retirada:
         raise HTTPException(status_code=404, detail="Código de retirada indisponível.")
     resposta.headers["Cache-Control"] = "private, no-store"
-    return {"codigo": gerar_codigo_retirada(aviso.id, usuario.id)}
+    return {"codigo": gerar_codigo_retirada(aviso.id, usuario.id, aviso.nonce_retirada)}
+
+
+def resposta_da_conferencia(aviso):
+    if aviso is None:
+        raise HTTPException(status_code=404, detail="Aviso não encontrado.")
+    if isinstance(aviso, str):
+        raise HTTPException(status_code=409, detail=aviso)
+    return aviso
+
+
+@router.post("/{aviso_id}/aprovar-retirada", response_model=AvisoSaida)
+def aprovar_retirada_rota(
+    aviso_id: int,
+    dados: ConferenciaRetirada,
+    usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
+    sessao=Depends(obter_sessao),
+):
+    return resposta_da_conferencia(aprovar_retirada(sessao, aviso_id, dados, usuario))
+
+
+@router.post("/{aviso_id}/corrigir-vinculo", response_model=AvisoSaida)
+def corrigir_vinculo_rota(
+    aviso_id: int,
+    usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
+    sessao=Depends(obter_sessao),
+):
+    return resposta_da_conferencia(corrigir_vinculo(sessao, aviso_id, usuario))
 
 
 # A rota traduz a recusa do serviço; o serviço não conhece códigos HTTP.

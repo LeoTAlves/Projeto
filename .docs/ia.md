@@ -4,7 +4,9 @@
 
 ### Sugestão de correspondência entre objeto achado e aviso de perda
 
-**Status:** planejada. Ainda não implementada.
+**Status:** integrada à tela de triagem. A API consulta avisos de perda em
+aberto e o balcão compara as sugestões lado a lado. A busca por texto continua
+disponível. A chamada real ainda precisa ser validada com um provedor configurado.
 
 ### Problema
 

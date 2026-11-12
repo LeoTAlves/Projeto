@@ -5,6 +5,7 @@ from banco import obter_sessao
 from configuracao import obter_configuracao
 from repositorios import usuario as repositorio_usuario
 from seguranca import gerar_hash, ler_token, verificar_senha
+from servicos.acesso import enviar_confirmacao
 
 
 configuracao = obter_configuracao()
@@ -42,20 +43,28 @@ def obter_usuario_atual(
             algorithms=["HS256"],
         )
         usuario_id = int(dados.get("sub"))
+        if "finalidade" in dados:
+            raise credenciais_invalidas
     except (jwt.InvalidTokenError, TypeError, ValueError):
         raise credenciais_invalidas
 
     usuario = buscar_por_id(sessao, usuario_id)
-    if usuario is None:
+    if usuario is None or not usuario.email_confirmado:
+        raise credenciais_invalidas
+    if usuario.tipo in ("equipe", "admin") and not dados.get("mfa"):
         raise credenciais_invalidas
     return usuario
 
 
-def criar_usuario(sessao, dados):
+def criar_usuario(sessao, dados, confirmar_cadastro=False):
     dados = {**dados, "email": (dados.get("email") or "").strip().lower()}
     usuario_existente = repositorio_usuario.buscar_por_email(sessao, dados["email"])
     if usuario_existente is not None:
         return "E-mail já cadastrado."
 
     dados_com_hash = {**dados, "senha": gerar_hash(dados["senha"])}
+    if confirmar_cadastro:
+        return repositorio_usuario.salvar(
+            sessao, {**dados_com_hash, "email_confirmado": False}, enviar_confirmacao,
+        )
     return repositorio_usuario.salvar(sessao, dados_com_hash)

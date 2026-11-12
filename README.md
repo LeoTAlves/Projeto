@@ -128,13 +128,14 @@ antes de publicar o backend atualizado. A revisão `9ab64c2f018e` permite que
    o pavilhão e a data. O aviso inicia em **Aguardando retirada**.
 2. Em **A ocorrência**, selecione o aviso. Após conferir a descrição e os detalhes
    com a pessoa, vincule o aviso à conta de visitante dela.
-3. Na conta do visitante, abra o aviso em **Meus avisos** e clique em **Mostrar código**.
+3. No balcão, confira a propriedade e aprove a retirada. Depois, o visitante
+   abre o aviso em **Meus avisos** e clica em **Mostrar código**.
 4. No balcão, selecione **Devolução**, preencha o código apresentado e registre.
    Código incorreto ou ausente mantém o aviso aguardando retirada. O código deixa
    de ser consultável e reutilizável após a devolução.
 
-Avisos criados pelo visitante seguem disponíveis. Quando a equipe registra o
-achado de um aviso já vinculado, o código passa a aparecer em **Meus avisos**.
+Quando a equipe registra o achado de um aviso já vinculado, o visitante vê em
+**Meus avisos** que há um possível achado em conferência.
 
 ## Sugestões de correspondência por IA
 
@@ -149,6 +150,43 @@ o registro continuam no fluxo manual de ocorrências.
 Se os provedores falharem, a API responde `503`; use os filtros e a triagem
 manual. As descrições são enviadas aos provedores configurados, sem dados de
 visitantes, e o modelo não tem acesso ao banco nem ferramentas de escrita.
+
+## Categorias, triagem e retirada com conferência
+
+Os registros novos aceitam categoria, cor e marca. O balcão informa o local de
+guarda e pode imprimir uma etiqueta em **Abrir atendimento → Etiqueta de guarda**.
+Depois de uma triagem, use o número do aviso de perda na etiqueta de cada item.
+Os registros antigos continuam pesquisáveis pela descrição.
+
+No balcão, a fila separa achados sem triagem, avisos em conferência e retiradas
+aprovadas. A triagem mostra os dados lado a lado e oferece busca por texto e
+sugestões com IA. O cadastro sugere atributos e, para visitantes, avisa sobre
+possíveis duplicidades entre os avisos da própria conta.
+
+Depois de confirmar um achado, abra o atendimento, confira a propriedade e
+aprove a retirada. Se o visitante tiver cadastrado um detalhe privado, peça
+que ele o informe. O código só aparece depois da aprovação. **Corrigir vínculo**
+invalida o código e reabre a busca. Na próxima aprovação, o sistema gera um
+novo código. O comprovante aparece no histórico após a entrega.
+
+### Ativar a nova versão
+
+1. Na pasta `backend`, execute `alembic upgrade head` no PostgreSQL que a nova
+   versão vai usar. A revisão deste conjunto é `b421a63f9d20`.
+2. Para confirmar novos cadastros, configure no backend `SMTP_HOST`, `SMTP_FROM`
+   e `URL_PUBLICA_CADE`. O servidor usa STARTTLS na porta 587 por padrão.
+   Conforme seu serviço de e-mail, configure `SMTP_PORT`, `SMTP_USER` e
+   `SMTP_PASSWORD`. Use a URL do frontend em `URL_PUBLICA_CADE`.
+3. Para as funções de IA, configure no backend pelo menos uma das variáveis
+   `GEMINI_API_KEY`, `OPENROUTER_API_KEY` ou `ANTHROPIC_API_KEY`.
+4. Atualize backend e frontend juntos. Equipe e administrador configuram
+   o autenticador no primeiro acesso, usando a chave exibida após validar a senha.
+   Visitantes existentes continuam ativos. Novos visitantes confirmam o e-mail.
+   Achados antigos pendentes passam pela conferência antes de liberar um novo código.
+
+Na pasta `backend`, execute `python -m tests.benchmark_triagem` para comparar
+quantos avisos corretos aparecem entre os três primeiros resultados. O roteiro
+usa somente exemplos fictícios e chama a IA quando há um provedor configurado.
 
 ## Estrutura e responsabilidades
 

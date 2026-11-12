@@ -100,6 +100,7 @@ export async function listarAvisos(filtrosInformados = {}) {
   if (filtrosInformados.visitante_id) {
     consulta.append('visitante_id', String(filtrosInformados.visitante_id));
   }
+  if (filtrosInformados.pendencia) consulta.set('pendencia', filtrosInformados.pendencia);
 
   const parametros = consulta.toString();
   const endereco = parametros ? URL_DA_API + "/avisos?" + parametros : URL_DA_API + "/avisos";
@@ -110,6 +111,46 @@ export async function listarAvisos(filtrosInformados = {}) {
 // Busca o detalhe que inclui as ocorrências associadas ao aviso.
 export async function buscarAviso(avisoId) {
   return executarRequisicao(URL_DA_API + "/avisos/" + avisoId);
+}
+
+export function confirmarEmail(token) {
+  return executarRequisicao(URL_DA_API + "/usuarios/confirmar-email", {
+    method: 'POST', body: JSON.stringify({ token }),
+  });
+}
+
+export function buscarDuplicados(descricao) {
+  return executarRequisicao(URL_DA_API + "/avisos/possiveis-duplicados", {
+    method: 'POST', body: JSON.stringify({ descricao }),
+  });
+}
+
+export function sugerirAtributos(descricao) {
+  return executarRequisicao(URL_DA_API + "/ia/atributos", {
+    method: 'POST', body: JSON.stringify({ descricao }),
+  });
+}
+
+export function sugerirCorrespondencias(dados) {
+  return executarRequisicao(URL_DA_API + "/ia/sugestoes", {
+    method: 'POST', body: JSON.stringify(dados),
+  });
+}
+
+export function aprovarRetirada(id, dados) {
+  return executarRequisicao(URL_DA_API + "/avisos/" + id + "/aprovar-retirada", {
+    method: 'POST', body: JSON.stringify(dados),
+  });
+}
+
+export function corrigirVinculo(id) {
+  return executarRequisicao(URL_DA_API + "/avisos/" + id + "/corrigir-vinculo", { method: 'POST' });
+}
+
+export function cancelarAviso(avisoId) {
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/cancelar", {
+    method: 'PATCH',
+  });
 }
 
 export function buscarCorrespondencias(avisoId, busca) {

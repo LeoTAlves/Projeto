@@ -196,6 +196,26 @@ textarea { resize: vertical; line-height: 1.6; }
 .painel-retirada button { justify-self: start; }
 .cartao .triagem-selecao { display: flex; align-items: center; }
 .triagem-selecao input { width: 1.1rem; height: 1.1rem; min-height: 0; margin: 0 0.4rem 0 0; }
+.triagem-comparacao {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .75rem;
+}
+.triagem-comparacao dl { margin: .5rem 0; overflow-wrap: anywhere; }
+.triagem-comparacao dt { color: var(--apoio); font-size: .75rem; }
+.triagem-comparacao dd { margin: 0 0 .35rem; }
+@media print {
+  body:has(.etiqueta-impressao) * { visibility: hidden; }
+  body:has(.etiqueta-impressao) .etiqueta-impressao,
+  body:has(.etiqueta-impressao) .etiqueta-impressao * { visibility: visible; }
+  body:has(.etiqueta-impressao) .etiqueta-impressao {
+    position: absolute;
+    inset: 0 auto auto 0;
+    padding: 12mm;
+    color: #000;
+    background: #fff;
+  }
+}
 .codigo-retirada { font-size: 1.1rem; font-weight: 700; overflow-wrap: anywhere; }
 
 /* Mantém textos, controles e etiquetas legíveis sobre superfícies escuras. */

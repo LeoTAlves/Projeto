@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, ForeignKey, Integer, String
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String
 
 from banco import Base
 from modelos.aviso import Aviso  # Apresenta à Base a tabela para onde a chave aponta.
@@ -13,3 +13,5 @@ class Ocorrencia(Base):
     tipo = Column(String(20), nullable=False)
     descricao = Column(String(200), nullable=False)
     data = Column(Date, nullable=False)
+    atendente = Column(String(100))
+    registrada_em = Column(DateTime(timezone=True))

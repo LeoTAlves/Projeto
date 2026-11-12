@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from banco import obter_sessao
 from esquemas.usuario import Login, Token
-from seguranca import criar_token
-from servicos.usuario import autenticar, obter_usuario_atual
+from servicos.acesso import login_seguro
+from servicos.usuario import obter_usuario_atual
 
 
 router = APIRouter(tags=["autenticacao"])
@@ -30,15 +30,11 @@ def exigir_grupo(*grupos_permitidos):
     return conferir_grupo
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, response_model_exclude_none=True)
 def login(
     dados: Login,
+    resposta: Response,
     sessao=Depends(obter_sessao),
 ):
-    usuario = autenticar(sessao, dados.email, dados.senha)
-    if usuario is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="E-mail ou senha incorretos",
-        )
-    return {"access_token": criar_token(usuario.id), "token_type": "bearer"}
+    resposta.headers["Cache-Control"] = "no-store"
+    return login_seguro(sessao, dados)

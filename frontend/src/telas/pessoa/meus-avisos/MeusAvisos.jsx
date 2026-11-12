@@ -1,31 +1,35 @@
 ﻿import { useEffect, useState } from 'react';
-import { listarAvisos, buscarAviso } from '../../../servicos/api';
+import { listarAvisos, buscarAviso, cancelarAviso } from '../../../servicos/api';
 import Paginacao from '../../../componentes/Paginacao';
 import CodigoRetirada from '../../../componentes/CodigoRetirada';
-import Situacao, { LegendaSituacoes } from '../../../componentes/Situacao';
+import Situacao, { LegendaSituacoes, situacaoDoAviso } from '../../../componentes/Situacao';
 
 // A tela de meus avisos combina a lista do visitante com o detalhe de cada aviso e suas ocorrências.
-function MeusAvisos({ visitanteId }) {
+function MeusAvisos({ visitanteId, avisoInicial }) {
   const [pagina, setPagina] = useState(1);
   const [avisos, setAvisos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false);
   const [erro, setErro] = useState('');
   const [avisoSelecionado, setAvisoSelecionado] = useState(null);
+  const [cancelando, setCancelando] = useState(false);
+  const [erroCancelamento, setErroCancelamento] = useState('');
 
   // A lista e o primeiro detalhe são carregados em sequência para manter os três estados da tela coerentes.
   useEffect(() => {
     setCarregando(true);
     setErro('');
+    setErroCancelamento('');
     setAvisos([]);
     setAvisoSelecionado(null);
 
     listarAvisos({ visitante_id: visitanteId, pagina })
       .then((resultado) => {
         setAvisos(resultado);
-        if (resultado.length === 0) return null;
+        const id = pagina === 1 && avisoInicial ? avisoInicial : resultado[0]?.id;
+        if (!id) return null;
         setCarregandoDetalhe(true);
-        return buscarAviso(resultado[0].id);
+        return buscarAviso(id);
       })
       .then((detalhe) => {
         if (detalhe) setAvisoSelecionado(detalhe);
@@ -35,17 +39,33 @@ function MeusAvisos({ visitanteId }) {
         setCarregando(false);
         setCarregandoDetalhe(false);
       });
-  }, [visitanteId, pagina]);
+  }, [visitanteId, pagina, avisoInicial]);
 
   // O detalhe escolhido inclui o histórico de ocorrências que pertence ao aviso.
   const abrirAviso = (avisoId) => {
     setCarregandoDetalhe(true);
     setErro('');
+    setErroCancelamento('');
     buscarAviso(avisoId)
       .then((detalhe) => setAvisoSelecionado(detalhe))
       .catch((falha) => setErro(falha.message))
       .finally(() => setCarregandoDetalhe(false));
   };
+
+  async function encerrarBusca() {
+    if (!window.confirm('Encontrou seu objeto? Confirme para encerrar a busca por este aviso.')) return;
+    setCancelando(true);
+    setErroCancelamento('');
+    try {
+      const atualizado = await cancelarAviso(avisoSelecionado.id);
+      setAvisoSelecionado(atualizado);
+      setAvisos((atuais) => atuais.map((aviso) => aviso.id === atualizado.id ? atualizado : aviso));
+    } catch (falha) {
+      setErroCancelamento(falha.message);
+    } finally {
+      setCancelando(false);
+    }
+  }
 
   if (carregando) return <section className="cartao"><p>Carregando avisos...</p></section>;
   if (erro) return <section className="cartao"><p className="erro">{erro}</p></section>;
@@ -62,17 +82,17 @@ function MeusAvisos({ visitanteId }) {
           <ul className="lista-avisos">
             {avisos.map((aviso) => (
               <li key={aviso.id} className={avisoSelecionado && avisoSelecionado.id === aviso.id ? 'selecionado' : ''}>
-                <button type="button" className="botao-aviso" onClick={() => abrirAviso(aviso.id)}>
+                <button type="button" className="botao-aviso" disabled={cancelando || carregandoDetalhe} onClick={() => abrirAviso(aviso.id)}>
                   <span className="aviso-numero">Aviso #{aviso.id}</span>
                   <strong>{aviso.descricao}</strong>
                   <span>{aviso.pavilhao}</span>
-                  <Situacao valor={aviso.situacao} />
+                  <Situacao valor={situacaoDoAviso(aviso)} />
                 </button>
               </li>
             ))}
           </ul>
         )}
-        <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando} aoMudar={setPagina} />
+        <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando || cancelando} aoMudar={setPagina} />
       </div>
 
       <div className="cartao detalhe">
@@ -83,11 +103,24 @@ function MeusAvisos({ visitanteId }) {
             <p className="sobretitulo">Aviso #{avisoSelecionado.id}</p>
             <h3>Detalhes do aviso</h3>
             <p><strong>Descrição:</strong> {avisoSelecionado.descricao}</p>
+            {avisoSelecionado.categoria && <p><strong>Categoria</strong> {avisoSelecionado.categoria}</p>}
             <p><strong>Pavilhão:</strong> {avisoSelecionado.pavilhao}</p>
             <p><strong>Noite:</strong> {avisoSelecionado.noite}</p>
-            <p className="situacao-atual"><strong>Situação</strong><Situacao valor={avisoSelecionado.situacao} /></p>
+            <p className="situacao-atual"><strong>Situação</strong><Situacao valor={situacaoDoAviso(avisoSelecionado)} /></p>
+            {avisoSelecionado.situacao === 'procurando' && (
+              <div className="painel-retirada">
+                <p>Já encontrou o objeto por conta própria?</p>
+                <button type="button" className="botao-secundario" disabled={cancelando} onClick={encerrarBusca}>
+                  {cancelando ? 'Cancelando...' : 'Cancelar aviso'}
+                </button>
+                {erroCancelamento && <p role="alert" className="mensagem erro">{erroCancelamento}</p>}
+              </div>
+            )}
+            {avisoSelecionado.situacao === 'cancelado' && <p role="status">A busca por este aviso foi encerrada.</p>}
             {avisoSelecionado.situacao === 'aguardando retirada' && (
-              <CodigoRetirada key={avisoSelecionado.id} avisoId={avisoSelecionado.id} />
+              avisoSelecionado.retirada_aprovada ? (
+                <><p role="status">Retirada aprovada.</p><CodigoRetirada key={avisoSelecionado.id} avisoId={avisoSelecionado.id} /></>
+              ) : <p role="status">Possível achado em conferência. Aguarde a aprovação do balcão.</p>
             )}
 
             <h4>Ocorrências</h4>
@@ -100,6 +133,10 @@ function MeusAvisos({ visitanteId }) {
                     <Situacao valor={ocorrencia.tipo} />
                     <span>{ocorrencia.descricao}</span>
                     <small>{ocorrencia.data}</small>
+                    {ocorrencia.tipo === 'devolucao' && <strong>Comprovante de devolução</strong>}
+                    {ocorrencia.atendente && (
+                      <small>Balcão · {ocorrencia.atendente} · {new Date(ocorrencia.registrada_em).toLocaleString('pt-BR')}</small>
+                    )}
                   </li>
                 ))}
               </ul>

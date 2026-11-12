@@ -34,7 +34,7 @@ def criar_ocorrencia_rotas(
     sessao=Depends(obter_sessao),
 ):
     # NOVO: a equipe pode operar avisos de qualquer visitante; só o visitante teria filtro de dono.
-    resultado = registrar_ocorrencia(sessao, aviso_id, dados.model_dump(), None)
+    resultado = registrar_ocorrencia(sessao, aviso_id, dados.model_dump(), None, usuario)
     if resultado is None:
         raise HTTPException(status_code=404, detail="Aviso não encontrado.")
     if isinstance(resultado, str):
