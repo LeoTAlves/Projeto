@@ -8,7 +8,7 @@ from rotas.autenticacao import GRUPO_ADMIN, GRUPO_EQUIPE, GRUPO_VISITANTE, exigi
 from seguranca import gerar_codigo_retirada
 from servicos.aviso import buscar_aviso, cancelar_aviso, confirmar_triagem, criar_aviso as criar_aviso_servico, listar_avisos, registrar_objeto_no_balcao, triar_objeto, vincular_visitante
 from servicos.usuario import obter_usuario_atual
-from esquemas.aviso import ConferenciaRetirada, DescricaoObjeto
+from esquemas.aviso import ConferenciaRetirada, DescricaoObjeto, ObjetoBalcaoCriar
 from servicos.aviso import aprovar_retirada, corrigir_vinculo, possiveis_duplicados
 
 # O router reúne os caminhos que o visitante e o balcão já utilizam.
@@ -54,7 +54,7 @@ def mostrar_aviso(
 # A equipe recebe objetos que ainda não têm um aviso de visitante.
 @router.post("/balcao", response_model=AvisoSaida, status_code=201)
 def registrar_objeto_balcao(
-    dados: AvisoCriar,
+    dados: ObjetoBalcaoCriar,
     usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
     sessao=Depends(obter_sessao),
 ):

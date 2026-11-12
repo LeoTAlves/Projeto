@@ -3,6 +3,7 @@ import { buscarUsuarioAtual, confirmarEmail, criarConta, limparSessao, login, sa
 import RegistrarPerda from './telas/pessoa/registrar-perda/RegistrarPerda';
 import MeusAvisos from './telas/pessoa/meus-avisos/MeusAvisos';
 import Balcao from './telas/gestao/balcao/Balcao';
+import RegistrarAchado from './telas/gestao/balcao/RegistrarAchado';
 import CadastrarEquipe from './telas/gestao/equipe/CadastrarEquipe';
 import Marca from './componentes/Marca';
 
@@ -347,7 +348,7 @@ function App() {
           aoAbrirAviso={(id) => { setAvisoParaAbrir(id); setTela('meus'); }} />}
         {usuario.tipo === 'visitante' && tela === 'meus' && <MeusAvisos visitanteId={usuario.id} avisoInicial={avisoParaAbrir} />}
         {podeOperarBalcao && tela === 'balcao' && <Balcao key={avisoBalcao ?? 'fila'} avisoInicial={avisoBalcao} />}
-        {podeOperarBalcao && tela === 'registrar-balcao' && <RegistrarPerda peloBalcao
+        {podeOperarBalcao && tela === 'registrar-balcao' && <RegistrarAchado
           aoAbrirAviso={(id) => { setAvisoBalcao(id); setTela('balcao'); }} />}
         {administrador && tela === 'equipe' && <CadastrarEquipe />}
       </main>

@@ -129,9 +129,13 @@ def criar_aviso(sessao, dados, usuario):
 
 # O balcão recebe o objeto mesmo quando o dono ainda é desconhecido.
 def registrar_objeto_no_balcao(sessao, dados, usuario):
+    agora = datetime.now(timezone.utc)
+    # Sem data do achado, o sistema usa a data do registro e deixa o pavilhão como desconhecido.
     return repositorio_aviso.criar_aviso(sessao, {
         **dados, "visitante_id": None, "situacao": "aguardando retirada",
-        "detalhe_privado": None, "situacao_desde": datetime.now(timezone.utc),
+        "pavilhao": dados.get("pavilhao") or "Não informado",
+        "noite": dados.get("noite") or agora.date(),
+        "detalhe_privado": None, "situacao_desde": agora,
         "recebido_por": f"#{usuario.id} {usuario.nome}"[:100],
     })
 

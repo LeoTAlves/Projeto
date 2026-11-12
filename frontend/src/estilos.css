@@ -263,7 +263,7 @@ textarea { resize: vertical; line-height: 1.6; }
 .titulo-balcao { font-size: clamp(1.4rem, 3vw, 2rem); margin: 1.5rem 0 1rem; }
 .titulo-atendimento { margin: 0 0 1rem; }
 .app-gestao .navegacao { margin-bottom: 1rem; }
-.filtros-atendimento, .campos-lado-a-lado {
+.filtros-atendimento {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
@@ -287,7 +287,7 @@ textarea { resize: vertical; line-height: 1.6; }
 .acao-triagem-lote { margin-top: 0.8rem; }
 
 @media (max-width: 700px) {
-  .filtros-atendimento, .campos-lado-a-lado { grid-template-columns: minmax(0, 1fr); }
+  .filtros-atendimento { grid-template-columns: minmax(0, 1fr); }
 }
 [data-tema="escuro"] .etiqueta-procurando { background: #473517; color: #ffda82; border-color: #8b6a34; }
 [data-tema="escuro"] .etiqueta-retirada { background: #213c5f; color: #c5deff; border-color: #5278a3; }

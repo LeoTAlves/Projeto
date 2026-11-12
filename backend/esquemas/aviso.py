@@ -1,6 +1,6 @@
 from datetime import date, datetime
-from typing import Literal
-from pydantic import BaseModel, Field
+from typing import Annotated, Literal
+from pydantic import BaseModel, Field, StringConstraints
 
 from esquemas.ocorrencia import OcorrenciaSaida
 
@@ -26,6 +26,13 @@ class AvisoCriar(AtributosObjeto):
     noite: date  # Valida uma data real, mantendo AAAA-MM-DD no JSON.
     local_guarda: str | None = Field(default=None, max_length=100)
     detalhe_privado: str | None = Field(default=None, max_length=200)
+
+
+# O balcão pode registrar só a descrição. Clientes anteriores ainda podem enviar os demais dados.
+class ObjetoBalcaoCriar(AvisoCriar):
+    descricao: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
+    pavilhao: Literal["Pavilhao 1", "Pavilhao 2", "Pavilhao 3"] | None = None
+    noite: date | None = None
 
 # O schema de saída traz os dados principais do aviso e o estado atual da busca.
 class AvisoSaida(AtributosObjeto):
