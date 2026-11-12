@@ -35,9 +35,9 @@ As seções abaixo registram o escopo reunido para esta rodada e o planejamento 
 ## Segurança do login e da retirada
 
 - Aguardar o pedido de implementação junto com as demais mudanças.
-- Confirmar o e-mail no cadastro do visitante. Usar verificação em duas etapas
-  para equipe e administrador, de preferência com aplicativo autenticador.
-  Limitar tentativas seguidas de login e usar mensagem genérica em caso de falha.
+- Confirmar o e-mail no cadastro do visitante. Equipe e administrador entram com
+  e-mail e senha. O login limita tentativas seguidas e usa mensagem genérica em
+  caso de falha.
 - Permitir que o visitante informe um detalhe privado do objeto no aviso de perda,
   como um adesivo ou uma marca de desgaste. O balcão confere esse detalhe antes
   de aprovar a retirada, mesmo quando a triagem já apontou uma correspondência.

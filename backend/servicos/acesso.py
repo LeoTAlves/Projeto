@@ -1,12 +1,9 @@
-import base64
-import hmac
 import os
 import smtplib
 import ssl
 import time
 from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
-from secrets import token_hex
 from urllib.parse import urlencode
 
 import jwt
@@ -36,25 +33,6 @@ def ler_token_temporario(token, finalidade):
     except jwt.InvalidTokenError:
         pass
     return {}
-
-
-def chave_autenticador(usuario, nonce):
-    chave = obter_configuracao()["chave_do_token"].encode()
-    return hmac.digest(chave, f"cade:totp:{usuario.id}:{nonce}".encode(), "sha256")[:20]
-
-
-def validar_autenticador(chave, codigo, ultimo_passo, agora):
-    if not codigo or not codigo.isascii() or not codigo.isdigit() or len(codigo) != 6:
-        return None
-    for passo in range(agora // 30 - 1, agora // 30 + 2):
-        if ultimo_passo is not None and passo <= ultimo_passo:
-            continue
-        digest = hmac.digest(chave, passo.to_bytes(8, "big"), "sha1")
-        offset = digest[-1] & 15
-        valor = int.from_bytes(digest[offset:offset + 4], "big") & 0x7fffffff
-        if hmac.compare_digest(f"{valor % 1000000:06d}", codigo):
-            return passo
-    return None
 
 
 def enviar_confirmacao(usuario):
@@ -90,6 +68,7 @@ def confirmar_email(sessao, token):
     sessao.commit()
 
 
+# A senha abre a sessão após a confirmação do e-mail, com limite de tentativas.
 def login_seguro(sessao, dados):
     agora = int(time.time())
     email = dados.email.strip().lower()
@@ -105,7 +84,7 @@ def login_seguro(sessao, dados):
             if usuario.falhas_login >= 5:
                 usuario.login_bloqueado_ate = agora + 300
             sessao.commit()
-        raise HTTPException(401, "E-mail, senha ou código incorretos. Se tentou várias vezes, aguarde alguns minutos.")
+        raise HTTPException(401, "E-mail ou senha incorretos. Se tentou várias vezes, aguarde alguns minutos.")
 
     if usuario is None or (usuario.login_bloqueado_ate or 0) > agora or not verificar_senha(dados.senha, usuario.senha):
         falhar()
@@ -115,29 +94,7 @@ def login_seguro(sessao, dados):
             sessao.commit()
         return {"etapa": "email_pendente"}
 
-    mfa = usuario.tipo in ("equipe", "admin")
-    if mfa:
-        nonce = usuario.totp_nonce
-        if nonce is None:
-            if not dados.codigo:
-                nonce = token_hex(24)
-                return {
-                    "etapa": "configurar_autenticador",
-                    "chave_autenticador": base64.b32encode(chave_autenticador(usuario, nonce)).decode(),
-                    "desafio": token_temporario(usuario, "ativar-autenticador", 5, nonce=nonce),
-                }
-            desafio = ler_token_temporario(dados.desafio or "", "ativar-autenticador")
-            if desafio.get("sub") != str(usuario.id) or not desafio.get("nonce"):
-                falhar()
-            nonce = desafio["nonce"]
-        elif not dados.codigo:
-            return {"etapa": "codigo_autenticador"}
-        passo = validar_autenticador(chave_autenticador(usuario, nonce), dados.codigo, usuario.totp_passo, agora)
-        if passo is None:
-            falhar()
-        usuario.totp_nonce = nonce
-        usuario.totp_passo = passo
     usuario.falhas_login = 0
     usuario.login_bloqueado_ate = None
     sessao.commit()
-    return {"access_token": criar_token(usuario.id, mfa=mfa), "token_type": "bearer"}
+    return {"access_token": criar_token(usuario.id), "token_type": "bearer"}

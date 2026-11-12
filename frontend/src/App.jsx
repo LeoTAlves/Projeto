@@ -26,8 +26,7 @@ function App() {
   const [carregandoSessao, setCarregandoSessao] = useState(true);
   const [carregandoLogin, setCarregandoLogin] = useState(false);
   const [carregandoCadastro, setCarregandoCadastro] = useState(false);
-  const [segundoFator, setSegundoFator] = useState(null);
-  const [codigoLogin, setCodigoLogin] = useState('');
+  const [emailPendente, setEmailPendente] = useState(false);
   const [avisoParaAbrir, setAvisoParaAbrir] = useState(null);
   const [avisoBalcao, setAvisoBalcao] = useState(null);
 
@@ -80,27 +79,23 @@ function App() {
     setCarregandoLogin(true);
 
     try {
-      const resultado = await login({
-        email, senha, codigo: codigoLogin || undefined, desafio: segundoFator?.desafio,
-        reenviar_confirmacao: reenviar,
-      });
-      if (resultado.etapa) {
-        setSegundoFator(resultado);
-        if (resultado.etapa === 'email_pendente') {
-          setMensagemCadastro(reenviar
-            ? 'Confira a caixa de entrada. O reenvio fica disponível a cada minuto.'
-            : 'Confirme seu e-mail pelo link enviado no cadastro.');
-        }
+      const resultado = await login({ email, senha, reenviar_confirmacao: reenviar });
+      // Contas pendentes podem pedir outro e-mail sem abrir uma sessão.
+      if (resultado.etapa === 'email_pendente') {
+        setEmailPendente(true);
+        setMensagemCadastro(reenviar
+          ? 'Confira a caixa de entrada. O reenvio fica disponível a cada minuto.'
+          : 'Confirme seu e-mail pelo link enviado no cadastro.');
         return;
       }
+      if (!resultado.access_token) throw new Error('Não foi possível iniciar a sessão. Tente novamente.');
       salvarToken(resultado.access_token);
       const usuarioAtual = await buscarUsuarioAtual();
       setUsuario(usuarioAtual);
       setTela(usuarioAtual.tipo === 'visitante' ? 'registrar' : 'balcao');
       setEmail('');
       setSenha('');
-      setSegundoFator(null);
-      setCodigoLogin('');
+      setEmailPendente(false);
     } catch (erro) {
       limparSessao();
       setUsuario(null);
@@ -142,8 +137,7 @@ function App() {
     setSenha('');
     setConfirmarSenha('');
     setMostrarSenha(false);
-    setSegundoFator(null);
-    setCodigoLogin('');
+    setEmailPendente(false);
   };
 
   const sair = () => {
@@ -155,8 +149,7 @@ function App() {
     setSenha('');
     setErroLogin('');
     setMostrarSenha(false);
-    setSegundoFator(null);
-    setCodigoLogin('');
+    setEmailPendente(false);
   };
 
   if (carregandoSessao) {
@@ -213,7 +206,7 @@ function App() {
                 required
                 type="email"
                 value={email}
-                onChange={(evento) => { setEmail(evento.target.value); setSegundoFator(null); setCodigoLogin(''); }}
+                onChange={(evento) => { setEmail(evento.target.value); setEmailPendente(false); }}
                 placeholder="nome@email.com"
                 autoComplete="email"
               />
@@ -228,7 +221,7 @@ function App() {
                   type={mostrarSenha ? 'text' : 'password'}
                   minLength={modoCadastro ? 8 : undefined}
                   value={senha}
-                  onChange={(evento) => { setSenha(evento.target.value); setSegundoFator(null); setCodigoLogin(''); }}
+                  onChange={(evento) => { setSenha(evento.target.value); setEmailPendente(false); }}
                   placeholder="Sua senha"
                   autoComplete={modoCadastro ? 'new-password' : 'current-password'}
                 />
@@ -261,26 +254,9 @@ function App() {
               </label>
             )}
 
-            {!modoCadastro && segundoFator?.etapa === 'email_pendente' && (
+            {!modoCadastro && emailPendente && (
               <button type="button" className="botao-secundario" disabled={carregandoLogin}
                 onClick={(evento) => entrar(evento, true)}>Reenviar confirmação</button>
-            )}
-            {!modoCadastro && segundoFator && segundoFator.etapa !== 'email_pendente' && (
-              <>
-                {segundoFator.etapa === 'configurar_autenticador' && (
-                  <div className="painel-retirada">
-                    <p>Adicione esta chave ao seu aplicativo autenticador como conta baseada em tempo.</p>
-                    <code className="codigo-retirada">{segundoFator.chave_autenticador}</code>
-                    <button type="button" className="botao-secundario"
-                      onClick={() => { setSegundoFator(null); setCodigoLogin(''); }}>Gerar outra chave</button>
-                  </div>
-                )}
-                <label>
-                  Código do autenticador
-                  <input required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}"
-                    value={codigoLogin} maxLength={6} onChange={(evento) => setCodigoLogin(evento.target.value)} />
-                </label>
-              </>
             )}
             <button type="submit" disabled={carregandoLogin || carregandoCadastro}>
               {modoCadastro

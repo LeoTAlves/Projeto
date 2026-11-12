@@ -51,8 +51,6 @@ def obter_usuario_atual(
     usuario = buscar_por_id(sessao, usuario_id)
     if usuario is None or not usuario.email_confirmado:
         raise credenciais_invalidas
-    if usuario.tipo in ("equipe", "admin") and not dados.get("mfa"):
-        raise credenciais_invalidas
     return usuario
 
 

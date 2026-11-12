@@ -20,9 +20,10 @@ def ler_token(token: str = Depends(esquema_oauth)):
     return token
 
 
-def criar_token(usuario_id: int, mfa=False):
+# A sessão identifica o usuário e expira em uma hora.
+def criar_token(usuario_id: int):
     validade = datetime.now(timezone.utc) + timedelta(minutes=60)
-    dados = {"sub": str(usuario_id), "exp": validade, "mfa": mfa}
+    dados = {"sub": str(usuario_id), "exp": validade}
     return jwt.encode(
         dados,
         configuracao["chave_do_token"],

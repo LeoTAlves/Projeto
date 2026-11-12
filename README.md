@@ -179,8 +179,7 @@ novo código. O comprovante aparece no histórico após a entrega.
    `SMTP_PASSWORD`. Use a URL do frontend em `URL_PUBLICA_CADE`.
 3. Para as funções de IA, configure no backend pelo menos uma das variáveis
    `GEMINI_API_KEY`, `OPENROUTER_API_KEY` ou `ANTHROPIC_API_KEY`.
-4. Atualize backend e frontend juntos. Equipe e administrador configuram
-   o autenticador no primeiro acesso, usando a chave exibida após validar a senha.
+4. Atualize backend e frontend juntos. Equipe e administrador entram com e-mail e senha.
    Visitantes existentes continuam ativos. Novos visitantes confirmam o e-mail.
    Achados antigos pendentes passam pela conferência antes de liberar um novo código.
 
