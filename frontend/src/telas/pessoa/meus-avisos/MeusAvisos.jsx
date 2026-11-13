@@ -81,7 +81,8 @@ function MeusAvisos({ visitanteId, avisoInicial }) {
         ) : (
           <ul className="lista-avisos">
             {avisos.map((aviso) => (
-              <li key={aviso.id} className={avisoSelecionado && avisoSelecionado.id === aviso.id ? 'selecionado' : ''}>
+              <li key={aviso.id} data-situacao={aviso.situacao}
+                className={avisoSelecionado?.id === aviso.id ? 'selecionado' : ''}>
                 <button type="button" className="botao-aviso" disabled={cancelando || carregandoDetalhe} onClick={() => abrirAviso(aviso.id)}>
                   <span className="aviso-numero">Aviso #{aviso.id}</span>
                   <strong>{aviso.descricao}</strong>

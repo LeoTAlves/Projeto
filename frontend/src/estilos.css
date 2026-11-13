@@ -298,3 +298,68 @@ textarea { resize: vertical; line-height: 1.6; }
 [data-tema="escuro"] .mensagem.erro { background: #442b37; border-color: #83515c; }
 [data-tema="escuro"] .mensagem.sucesso { background: #214537; color: #bcebd0; border-color: #57856f; }
 [data-tema="escuro"] :focus-visible { outline-color: #efba4b; }
+
+/* A hierarquia de cores acompanha os dois temas, com texto e símbolos junto às situações. */
+:root {
+  --superficie-busca: #e9f4f5;
+  --superficie-opcoes: #f1eef9;
+  --nav-ativa: #d5ecee;
+  --nav-texto: #153e48;
+  --procurando-fundo: #fffaee;
+  --procurando-faixa: #9c6513;
+  --retirada-fundo: #edf7ff;
+  --retirada-faixa: #3568a5;
+  --devolvido-fundo: #eef9f1;
+  --devolvido-faixa: #33734f;
+  --encerrado-fundo: #f3f0f8;
+  --encerrado-faixa: #726093;
+}
+:root[data-tema="escuro"] {
+  --superficie-busca: #20393f;
+  --superficie-opcoes: #312940;
+  --nav-ativa: #234d54;
+  --nav-texto: #e4f8f6;
+  --procurando-fundo: #362d20;
+  --procurando-faixa: #e5b95c;
+  --retirada-fundo: #1e354c;
+  --retirada-faixa: #87b9fb;
+  --devolvido-fundo: #20382f;
+  --devolvido-faixa: #80c8a2;
+  --encerrado-fundo: #302940;
+  --encerrado-faixa: #bda9e6;
+}
+body { font-size: 1.0625rem; }
+.texto-apoio, .formulario label, .cartao label, input, select, textarea { font-size: 1rem; }
+.aviso-numero, .aviso-metadados, .botao-aviso > span:not(.etiqueta):not(.aviso-numero) { font-size: 0.875rem; }
+.botao-aviso strong, .lista-avisos > li > strong { font-size: 1.125rem; }
+.etiqueta, .legenda-situacoes .etiqueta, .paginacao span, .paginacao button { font-size: 0.875rem; }
+.navegacao button, .acoes-cabecalho button, .card-acesso .texto-apoio { font-size: 0.95rem; }
+.triagem-comparacao dt, .identidade-usuario > div > span { font-size: 0.875rem; }
+.navegacao button.ativo, [data-tema="escuro"] .navegacao button.ativo {
+  background: var(--nav-ativa);
+  color: var(--nav-texto);
+  border-color: var(--borda);
+}
+.filtros-atendimento, .painel-retirada { background: var(--superficie-busca); }
+.filtros-atendimento { padding: 0.85rem; border-radius: 12px; }
+.filtros-fila, [data-tema="escuro"] .filtros-fila { background: var(--superficie-opcoes); }
+.lista-avisos > li[data-situacao] {
+  background: var(--fundo-situacao, var(--encerrado-fundo));
+  border-inline-start: 4px solid var(--faixa-situacao, var(--encerrado-faixa));
+}
+.lista-avisos > li[data-situacao="procurando"] {
+  --fundo-situacao: var(--procurando-fundo);
+  --faixa-situacao: var(--procurando-faixa);
+}
+.lista-avisos > li[data-situacao="aguardando retirada"] {
+  --fundo-situacao: var(--retirada-fundo);
+  --faixa-situacao: var(--retirada-faixa);
+}
+.lista-avisos > li[data-situacao="devolvido"] {
+  --fundo-situacao: var(--devolvido-fundo);
+  --faixa-situacao: var(--devolvido-faixa);
+}
+.lista-avisos > li[data-situacao].selecionado {
+  outline: 2px solid var(--faixa-situacao, var(--encerrado-faixa));
+  box-shadow: none;
+}

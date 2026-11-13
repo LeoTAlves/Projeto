@@ -99,7 +99,7 @@ export default function Balcao({ avisoInicial }) {
       ) : (
         <ul className="lista-avisos lista-balcao">
           {avisos.map((aviso) => (
-            <li key={aviso.id}>
+            <li key={aviso.id} data-situacao={aviso.situacao}>
               <div className="aviso-topo">
                 <span className="aviso-numero">Aviso #{aviso.id}</span>
                 <Situacao valor={aviso.situacao} />

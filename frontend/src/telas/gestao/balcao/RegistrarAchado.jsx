@@ -4,7 +4,6 @@ import { registrarObjetoBalcao } from '../../../servicos/api';
 // O balcão cadastra o achado em um único campo e pode ir direto à triagem.
 export default function RegistrarAchado({ aoAbrirAviso }) {
   const [descricao, setDescricao] = useState('');
-  const [achadoId, setAchadoId] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
 
@@ -15,11 +14,9 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
     if (salvando || texto.length < 3) return;
     setSalvando(true);
     setErro('');
-    setAchadoId(null);
     try {
       const achado = await registrarObjetoBalcao({ descricao: texto });
-      setAchadoId(achado.id);
-      setDescricao('');
+      aoAbrirAviso(achado.id);
     } catch (falha) {
       setErro(falha.message);
     } finally {
@@ -43,12 +40,6 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
         </button>
       </form>
       {erro && <p className="mensagem erro" role="alert">{erro}</p>}
-      {achadoId && (
-        <>
-          <p className="mensagem sucesso" role="status">Objeto #{achadoId} registrado.</p>
-          <button type="button" onClick={() => aoAbrirAviso(achadoId)}>Triar objeto #{achadoId}</button>
-        </>
-      )}
     </section>
   );
 }

@@ -51,52 +51,63 @@ export default function Triagem({ aviso, aoRegistrar }) {
   const [erroRegistro, setErroRegistro] = useState('');
   const [selecionados, setSelecionados] = useState([]);
   const [registrando, setRegistrando] = useState(false);
-  const [consultandoIA, setConsultandoIA] = useState(false);
+  const [consultandoIA, setConsultandoIA] = useState(true);
   const [sugestoesIA, setSugestoesIA] = useState(null);
   const [mensagemIA, setMensagemIA] = useState('');
   // Modelo e turno existem apenas na consulta; o formulário não os envia à rota de gravação.
   const [modelo, setModelo] = useState('');
   const [turno, setTurno] = useState('');
+  const [analise, setAnalise] = useState({ modelo: '', turno: '' });
 
-  // A consulta envia os dados transitórios e mantém a seleção humana antes de registrar qualquer achado.
-  async function buscarComIA() {
-    setConsultandoIA(true);
-    setMensagemIA('');
-    setSelecionados([]);
-    setErroRegistro('');
-    setSugestoesIA(null);
-    try {
-      const preenchidos = [aviso.categoria, aviso.cor, aviso.marca].filter(Boolean);
-      const extras = preenchidos.length < 2 ? await sugerirAtributos(aviso.descricao) : {};
-      const resultado = await sugerirCorrespondencias({
-        categoria: aviso.categoria || extras.categoria,
-        cor: aviso.cor || extras.cor,
-        marca: aviso.marca || extras.marca,
-        caracteristicas_distintivas: aviso.descricao, pavilhao: aviso.pavilhao, noite: aviso.noite,
-        modelo: modelo.trim() || null,
-        turno: turno || null,
-      });
-      const sugestoes = resultado.correspondencias.filter((item) => !item.bloqueado).slice(0, 10);
-      const detalhes = await Promise.all(sugestoes.map(async (item) => {
-        const perda = await buscarAviso(item.aviso_id);
-        return {
-          ...perda,
-          pontuacao: item.pontuacao,
-          caracteristicas_compativeis: item.caracteristicas_compativeis,
-          explicacao: item.explicacao,
-        };
-      }));
-      const abertas = detalhes.filter((item) => item.situacao === 'procurando');
-      if (abertas.length) setSugestoesIA(abertas);
-      setMensagemIA(abertas.length ? 'Sugestões da IA para conferência humana.'
-        : sugestoes.length ? 'Os avisos sugeridos não estão mais disponíveis. Confira a busca por texto.'
-          : resultado.mensagem);
-    } catch (falha) {
-      setMensagemIA(falha.message + ' Você pode continuar pela busca por texto.');
-    } finally {
-      setConsultandoIA(false);
+  // Ao abrir a triagem, compara o achado automaticamente. Sair descarta respostas atrasadas.
+  useEffect(() => {
+    if (!analise) return;
+    let ativa = true;
+    async function buscarComIA() {
+      setConsultandoIA(true);
+      setMensagemIA('');
+      setSelecionados([]);
+      setErroRegistro('');
+      setSugestoesIA(null);
+      try {
+        const preenchidos = [aviso.categoria, aviso.cor, aviso.marca].filter(Boolean);
+        const extras = preenchidos.length < 2 ? await sugerirAtributos(aviso.descricao) : {};
+        if (!ativa) return;
+        const resultado = await sugerirCorrespondencias({
+          categoria: aviso.categoria || extras.categoria,
+          cor: aviso.cor || extras.cor,
+          marca: aviso.marca || extras.marca,
+          caracteristicas_distintivas: aviso.descricao, pavilhao: aviso.pavilhao, noite: aviso.noite,
+          modelo: analise.modelo || null,
+          turno: analise.turno || null,
+        });
+        if (!ativa) return;
+        const sugestoes = resultado.correspondencias.filter((item) => !item.bloqueado).slice(0, 10);
+        const detalhes = await Promise.allSettled(sugestoes.map(async (item) => {
+          const perda = await buscarAviso(item.aviso_id);
+          return {
+            ...perda,
+            pontuacao: item.pontuacao,
+            caracteristicas_compativeis: item.caracteristicas_compativeis,
+            explicacao: item.explicacao,
+          };
+        }));
+        if (!ativa) return;
+        const abertas = detalhes.flatMap((item) =>
+          item.status === 'fulfilled' && item.value.situacao === 'procurando' ? [item.value] : []);
+        if (abertas.length) setSugestoesIA(abertas);
+        setMensagemIA(abertas.length ? 'Sugestões da IA para conferência humana.'
+          : sugestoes.length ? 'Os avisos sugeridos não estão mais disponíveis. Confira a busca por texto.'
+            : resultado.mensagem);
+      } catch (falha) {
+        if (ativa) setMensagemIA('A análise com IA ficou indisponível. Confira os resultados da busca por texto.');
+      } finally {
+        if (ativa) setConsultandoIA(false);
+      }
     }
-  }
+    buscarComIA();
+    return () => { ativa = false; };
+  }, [aviso, analise]);
 
   useEffect(() => {
     let ativa = true;
@@ -132,9 +143,11 @@ export default function Triagem({ aviso, aoRegistrar }) {
   return (
     <div className="painel-retirada">
       <strong>Possíveis avisos de perda</strong>
-      <p>Confira as características e a explicação antes de escolher um aviso. A IA não registra ocorrências.</p>
+      <p>Compare as características e confirme quais avisos correspondem aos objetos recebidos.</p>
       <form className="formulario busca-triagem" onSubmit={(evento) => {
         evento.preventDefault();
+        setAnalise(null);
+        setConsultandoIA(false);
         setSugestoesIA(null);
         setMensagemIA('');
         setConsulta({ texto: texto.trim() });
@@ -150,19 +163,13 @@ export default function Triagem({ aviso, aoRegistrar }) {
           <p>Modelo e turno serão usados somente nesta análise e não serão gravados.</p>
           <label>
             Modelo
-            <input value={modelo} maxLength={100} disabled={consultandoIA || registrando} onChange={(evento) => {
-              setModelo(evento.target.value);
-              setSugestoesIA(null);
-              setMensagemIA('');
-            }} />
+            <input value={modelo} maxLength={100} disabled={consultandoIA || registrando}
+              onChange={(evento) => setModelo(evento.target.value)} />
           </label>
           <label>
             Turno
-            <select value={turno} disabled={consultandoIA || registrando} onChange={(evento) => {
-              setTurno(evento.target.value);
-              setSugestoesIA(null);
-              setMensagemIA('');
-            }}>
+            <select value={turno} disabled={consultandoIA || registrando}
+              onChange={(evento) => setTurno(evento.target.value)}>
               <option value="">Não informado</option>
               <option value="manha">Manhã</option>
               <option value="tarde">Tarde</option>
@@ -170,9 +177,11 @@ export default function Triagem({ aviso, aoRegistrar }) {
             </select>
           </label>
         </details>
-        <button type="submit" disabled={carregando || registrando || consultandoIA}>Buscar por texto</button>
+        <button type="submit" disabled={registrando}>Buscar por texto</button>
         <button type="button" className="botao-secundario" disabled={carregando || registrando || consultandoIA}
-          onClick={buscarComIA}>{consultandoIA ? 'Consultando IA...' : 'Buscar sugestões com IA'}</button>
+          onClick={() => setAnalise({ modelo: modelo.trim(), turno })}>
+          {consultandoIA ? 'Consultando IA...' : 'Refazer análise com IA'}
+        </button>
       </form>
       {mensagemIA && <p role="status">{mensagemIA}</p>}
       {consultandoIA && <p role="status">A IA está comparando os avisos. Aguarde para conferir as sugestões.</p>}
@@ -191,7 +200,7 @@ export default function Triagem({ aviso, aoRegistrar }) {
                 <li key={candidato.id}>
                   <span className="aviso-numero">Aviso #{candidato.id} · Visitante #{candidato.visitante_id}</span>
                   <CompararObjetos
-                    achado={{ ...aviso, modelo: modelo.trim() || null, turno: turno || null }}
+                    achado={{ ...aviso, modelo: analise?.modelo || null, turno: analise?.turno || null }}
                     perda={candidato}
                   />
                   {candidato.pontuacao !== undefined && (
