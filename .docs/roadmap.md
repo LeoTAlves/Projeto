@@ -30,23 +30,23 @@ em `.docs/ia.md`.
 
 - Usar Gemini como principal, OpenRouter grátis como primeira reserva e Claude pago como terceira
   opção, todos pela biblioteca Jangada.
-- Usar `calcular_compatibilidades()` como função local de cálculo; não consultar o banco por uma
-  tool do modelo.
+- Registrar `calcular_compatibilidades_da_consulta` como tool local no `Agent`; limitar sua ação
+  ao cálculo sobre os avisos já preparados pelo backend.
 - Não habilitar `wikipedia_search()` nem `web_search()`: não ajudam a comparar avisos privados, e a
   busca web consumiria cota sem utilidade para o caso.
 - Não usar streaming, múltiplos agentes, MCP, RAG, LangChain ou outro orquestrador.
 
 ### Verificações e limite atual
 
-- Dez testes do backend passaram, incluindo fallback simulado de Gemini para OpenRouter, cálculo
-  local, HTTP 503 e ausência de gravação automática.
+- Doze testes do backend passaram, incluindo execução da tool pelo `Agent`, fallback simulado de
+  Gemini para OpenRouter, cálculo local, HTTP 503 e ausência de gravação automática.
 - `npm.cmd run build` passou no frontend; o responsável também confirmou o teste manual da tela.
-- Não foi feita chamada real aos provedores; a disponibilidade dos modelos ainda requer validação
-  quando o responsável configurar o ambiente.
+- A tentativa de chamada real não chegou ao provedor porque não havia provedor configurado no
+  ambiente. Não houve chamada externa; a validação real segue pendente.
 
 ### Próximas verificações
 
-- Validar uma chamada real apenas quando o responsável configurar os provedores no ambiente.
+- Validar chamadas reais quando houver provedor configurado no ambiente.
 - Acompanhar a qualidade das sugestões e ajustar o cálculo com dados fictícios ou autorizados.
 
 ## Outros itens

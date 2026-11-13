@@ -14,6 +14,8 @@
   orientação para continuar pela busca manual.
 - A comparação local exige pelo menos três características compatíveis antes de aceitar uma
   sugestão do modelo; a resposta também é validada para impedir IDs e características inventados.
+- A triagem usa um `Agent` do Jangada com a tool local `calcular_compatibilidades_da_consulta`;
+  a rota continua chamando apenas a função da pasta `ia/`.
 - Os campos modelo e turno são transitórios. Nenhum modelo SQLAlchemy, migration ou regra da
   cartilha foi alterado para a funcionalidade.
 
@@ -21,28 +23,30 @@
 
 O Jangada faz as chamadas nesta ordem: Gemini (`gemini-3.5-flash-lite`), OpenRouter
 (`openrouter/free`) e Claude (`claude-opus-5-5`). A cadeia só inclui provedores configurados.
-O fallback foi testado sem chamadas externas: um erro simulado de modelo inexistente no Gemini
-confirma que a resposta fictícia vem de `openrouter`; portanto, o teste não certifica a
-disponibilidade real dos modelos.
+Um teste simula um modelo Gemini inexistente e confirma que o fallback do Jangada responde por
+`openrouter`, sem chamar Claude. O mesmo cenário é coberto no loop do `Agent` com a tool.
+
+A tentativa de executar a comparação diretamente com o ambiente atual terminou antes de qualquer
+chamada externa: nenhum provedor estava configurado. Não foram consultadas nem exibidas chaves; por
+isso, a resposta dos modelos reais ainda não foi validada.
 
 ### Tools consideradas
 
-- **Função do projeto escolhida:** `calcular_compatibilidades()` em
-  `backend/ia/ferramentas.py`. É um cálculo local, somente de leitura, que compara os cinco
-  atributos permitidos e exige três compatibilidades. O backend usa o resultado para filtrar a
-  resposta da IA; a função não acessa banco nem produz efeitos colaterais.
+- **Tool do Agent escolhida:** `criar_tool_calcular_compatibilidades()` em
+  `backend/ia/ferramentas.py` prepara uma função local que chama `calcular_compatibilidades()`.
+  Ela só calcula compatibilidades dos dados já consultados, sem acessar ou alterar o banco, e
+  devolve ao Agent os IDs e campos compatíveis. O backend repete a validação antes de exibir.
 - **Tools prontas do Jangada:** nenhuma foi habilitada. `wikipedia_search()` não ajuda a comparar
   avisos privados do sistema e poderia trazer dados irrelevantes. `web_search()` também não
   encontra os dados necessários e consumiria cota de busca do provedor sem benefício para o fluxo.
-- **Gravação e envio:** nenhuma tool grava, apaga ou envia dados externos. O único envio é o pedido
-  ao modelo por meio do Jangada, com os dados preparados pelo backend; a pessoa confere a sugestão
-  antes de registrar.
+- **Gravação e envio:** nenhuma tool grava, apaga ou envia dados externos. O Jangada recebe os
+  dados preparados pelo backend; a pessoa confere a sugestão antes de registrar.
 
 ### Passos e verificações
 
 1. Criar `backend/ia/` com `__init__.py`, `modelos.py`, `ferramentas.py` e `sugestao.py`.
-   Verificar ordem Gemini → OpenRouter → Claude e simular um modelo Gemini inexistente para
-   confirmar `provider="openrouter"`.
+   Executar o pedido diretamente pelo Jangada e pelo `Agent`; simular um modelo Gemini inexistente
+   e confirmar que a resposta vem de `provider="openrouter"`.
 2. Implementar a comparação local pura e testar compatibilidade e rejeição de candidatos com menos
    de três atributos compatíveis usando dados fictícios.
 3. Colocar esquemas, `INSTRUCAO` e funções de IA em `backend/ia/`; manter importações e testes.
@@ -52,9 +56,11 @@ disponibilidade real dos modelos.
    somente após confirmação humana.
 6. Documentar o módulo e verificar a arquitetura.
 
-Verificações realizadas: dez testes do backend passaram; `npm.cmd run build` no frontend passou;
-`git diff --check` passou; a interface foi testada manualmente pelo responsável. As chamadas reais
-ao Gemini, OpenRouter e Claude não foram validadas.
+Verificações realizadas: doze testes do backend passaram, incluindo chamada direta simulada, uso da
+tool pelo `Agent` e fallback simulado de modelo Gemini inexistente para OpenRouter. A tentativa
+direta real foi bloqueada pela ausência de provedores configurados, sem chamada externa.
+`npm.cmd run build` no frontend passou; `git diff --check` passou; a interface foi testada
+manualmente pelo responsável.
 
 ## Funcionalidade
 
@@ -119,9 +125,9 @@ filtros do balcão, abrirá um aviso e registrará a ocorrência sem a sugestão
 
 ### Arquitetura implementada
 
-Para o MVP, uma chamada ao modelo é suficiente. O backend consulta avisos abertos, calcula
-compatibilidades localmente e envia os dados ao Jangada. A saída é validada e filtrada pelo
-resultado determinístico antes de ser devolvida à tela.
+Para o MVP, um único `Agent` do Jangada recebe os avisos consultados pelo backend e pode usar uma
+tool local para calcular compatibilidades. O backend valida e filtra a resposta pelo resultado
+determinístico antes de devolvê-la à tela.
 
 Será usada uma chamada de comparação, com esta responsabilidade:
 
@@ -129,8 +135,9 @@ Será usada uma chamada de comparação, com esta responsabilidade:
 - comparar os dados;
 - retornar as correspondências e suas justificativas.
 
-O modelo não tem acesso direto ao banco nem ferramenta de escrita. O backend consulta os avisos e
-valida a resposta. A função local não consulta o banco e apenas calcula compatibilidades.
+O Agent não tem acesso direto ao banco nem ferramentas de escrita ou busca externa. O backend
+consulta os avisos e valida a resposta. A única tool disponibilizada calcula compatibilidades nos
+dados já preparados; não consulta nem altera registros.
 
 Não há justificativa, neste momento, para separar o trabalho em múltiplos agentes. Dividir extração,
 comparação e classificação aumentaria a complexidade sem necessidade comprovada.
@@ -162,14 +169,14 @@ enviada pela aplicação. A instrução atual está em `backend/ia/sugestao.py` 
 `INSTRUCAO`, e o prompt de comparação é montado por `montar_prompt()` em
 `backend/ia/ferramentas.py`.
 
-Na aplicação, uma única chamada ao modelo recebe avisos consultados pelo backend e dados fictícios
-ou operacionais do formulário. A ferramenta pronta de busca web e ferramentas externas não são
+Na aplicação, o Agent recebe avisos consultados pelo backend e dados fictícios ou operacionais do
+formulário. A tool local de compatibilidade é fornecida ao Agent; ferramentas de busca web não são
 incluídas.
 
 - Papel: encontrar possíveis correspondências entre um objeto achado e avisos de perda.
 - Dados recebidos: o objeto achado e a lista de avisos fornecida pelo backend.
-- Ferramentas: nenhuma ferramenta pronta do Jangada. A compatibilidade é calculada localmente
-  pelo backend antes e depois da chamada ao modelo.
+- Ferramentas: a tool local `calcular_compatibilidades_da_consulta`; nenhuma busca pronta do
+  Jangada.
 - Limites: não cria ocorrência, não altera avisos, não decide devolução e não grava dados.
 - Confirmação: Rodrigo revisa e confirma o aviso escolhido.
 

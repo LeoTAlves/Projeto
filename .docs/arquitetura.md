@@ -37,7 +37,8 @@ ocorrência ou persistência:
 
 - `modelos.py`: configura Gemini, OpenRouter e Claude pela biblioteca Jangada e define o fallback.
 - `ferramentas.py`: calcula localmente quais avisos têm pelo menos três características
-  compatíveis e monta os dados do prompt. O cálculo não acessa nem altera o banco.
+  compatíveis, cria a tool local para o Agent e monta os dados do prompt. O cálculo não acessa nem
+  altera o banco.
 - `sugestao.py`: mantém `INSTRUCAO`, esquemas da solicitação e resposta, consulta avisos pelo
   repositório, valida e filtra as sugestões, além de centralizar a extração de atributos.
 - `__init__.py`: torna a pasta um pacote Python.
@@ -47,6 +48,6 @@ sugestões não grava e converte indisponibilidade total dos provedores em HTTP 
 fornece avisos abertos para comparação. A tela `Triagem.jsx` apresenta os resultados, permite a
 conferência e só então chama a rota existente de registro.
 
-O modelo não recebe acesso direto à sessão ou ao banco e não dispõe de ferramenta de escrita. A
-função de compatibilidade é somente de cálculo; buscas externas prontas do Jangada não são usadas.
-Os dados modelo e turno são transitórios e nenhum modelo ou migration foi alterado para a IA.
+O Agent não recebe acesso direto à sessão ou ao banco e não dispõe de ferramenta de escrita ou
+busca externa. Sua única tool é a função local de cálculo sobre dados já consultados. Os dados
+modelo e turno são transitórios e nenhum modelo ou migration foi alterado para a IA.

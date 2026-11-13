@@ -64,6 +64,18 @@ def calcular_compatibilidades(
     return resultado
 
 
+# A tool expõe ao Agent somente o cálculo determinístico sobre os dados já consultados.
+def criar_tool_calcular_compatibilidades(
+    objeto: Mapping[str, object],
+    avisos: Sequence[Mapping[str, object]],
+):
+    def calcular_compatibilidades_da_consulta() -> list[dict[str, object]]:
+        """Calcular os candidatos compatíveis sem acessar ou alterar o banco."""
+        return calcular_compatibilidades(objeto, avisos)
+
+    return calcular_compatibilidades_da_consulta
+
+
 ESQUEMA_RESPOSTA_GEMINI = {
     "type": "OBJECT",
     "properties": {

@@ -10,10 +10,16 @@ from ia.ferramentas import (
     NOMES_CARACTERISTICAS,
     calcular_compatibilidades,
     contar_caracteristicas,
+    criar_tool_calcular_compatibilidades,
     montar_prompt,
 )
 from ia.comparacao_local import comparar_localmente, extrair_atributos
-from ia.modelos import ProvedoresIndisponiveis, gerar_resposta, provedor_configurado
+from ia.modelos import (
+    ProvedoresIndisponiveis,
+    gerar_resposta,
+    gerar_resposta_com_agente,
+    provedor_configurado,
+)
 from repositorios.aviso import listar_avisos_para_sugestao
 
 
@@ -115,11 +121,13 @@ def sugerir_correspondencias(sessao, dados: SugestaoIACriar) -> SugestaoIARespos
             situacao="sem_correspondencias",
             mensagem="Nenhuma sugestão compatível foi encontrada. Continue pela conferência manual.",
         )
-    resposta = gerar_resposta(
+    resultado_agente = gerar_resposta_com_agente(
         montar_prompt(objeto, dados_avisos),
         _interpretar_resposta,
+        criar_tool_calcular_compatibilidades(objeto, dados_avisos),
         system=INSTRUCAO,
     )
+    resposta = resultado_agente.resposta
     avisos_por_id = {aviso.id: aviso for aviso in avisos}
     sugestoes = []
     ids_sugeridos = set()

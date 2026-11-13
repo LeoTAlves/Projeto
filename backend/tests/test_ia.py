@@ -4,10 +4,16 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from fastapi import HTTPException
+from jangada_ai.message import Completion, ToolCall
 
 from esquemas.aviso import DescricaoObjeto
-from ia.ferramentas import calcular_compatibilidades
-from ia.modelos import ProvedoresIndisponiveis, criar_modelo_com_fallback, gerar_resposta
+from ia.ferramentas import calcular_compatibilidades, criar_tool_calcular_compatibilidades
+from ia.modelos import (
+    ProvedoresIndisponiveis,
+    criar_modelo_com_fallback,
+    gerar_resposta,
+    gerar_resposta_com_agente,
+)
 from ia.sugestao import (
     CorrespondenciaIA,
     SugestaoIACriar,
@@ -64,7 +70,7 @@ class TestSugestaoIA(unittest.TestCase):
         with (
             patch("ia.sugestao.listar_avisos_para_sugestao", return_value=[aviso]),
             patch(
-                "ia.sugestao.gerar_resposta",
+                "ia.sugestao.gerar_resposta_com_agente",
                 side_effect=ProvedoresIndisponiveis("falha fictícia"),
             ),
             self.assertRaises(ProvedoresIndisponiveis),
@@ -168,7 +174,6 @@ class TestSugestaoIA(unittest.TestCase):
     # Chaves fictícias e falha simulada permitem testar o fallback do Jangada sem chamadas externas.
     def test_jangada_usa_openrouter_quando_modelo_gemini_falha(self):
         from jangada_ai.errors import NotFoundError
-        from jangada_ai.message import Completion
 
         modelo = criar_modelo_com_fallback(
             {
@@ -203,6 +208,112 @@ class TestSugestaoIA(unittest.TestCase):
         self.assertEqual(gemini.model, "modelo-inexistente")
         self.assertEqual(resposta.provider, "openrouter")
         completar_openrouter.assert_called_once()
+        completar_claude.assert_not_called()
+
+    # O Agent executa a tool local entre duas respostas do modelo e interpreta a resposta final.
+    def test_agent_executa_tool_de_compatibilidade(self):
+        avisos = [{
+            "id": 401,
+            "categoria": "Mochila",
+            "cor": "azul",
+            "marca": "Marca A",
+        }]
+        objeto = {
+            "categoria": "Mochila",
+            "cor": "azul",
+            "marca": "Marca A",
+        }
+        ferramenta = criar_tool_calcular_compatibilidades(objeto, avisos)
+        chamada_tool = Completion(
+            text="",
+            model="modelo-ficticio",
+            provider="openrouter",
+            tool_calls=[ToolCall(id="tool-1", name=ferramenta.__name__, args={})],
+        )
+        resposta_final = Completion(
+            text='{"ok": true}',
+            model="modelo-ficticio",
+            provider="openrouter",
+        )
+        modelo_falso = Mock()
+        modelo_falso.complete.side_effect = [chamada_tool, resposta_final]
+
+        with patch("ia.modelos.criar_modelo_com_fallback", return_value=modelo_falso):
+            resultado = gerar_resposta_com_agente(
+                "pedido fictício",
+                lambda texto: texto,
+                ferramenta,
+                system="instrução fictícia",
+            )
+
+        self.assertEqual(resultado.resposta, '{"ok": true}')
+        self.assertEqual(resultado.provedor, "openrouter")
+        self.assertTrue(resultado.ferramenta_executada)
+        self.assertEqual(modelo_falso.complete.call_count, 2)
+        retorno_tool = modelo_falso.complete.call_args_list[1].kwargs["history"][-1].content[0]
+        self.assertIn('"aviso_id": 401', retorno_tool.content)
+
+    # O Agent usa a reserva OpenRouter após NotFoundError fictício no modelo Gemini.
+    def test_agent_faz_fallback_de_gemini_inexistente_e_usa_tool(self):
+        from jangada_ai import LLM
+        from jangada_ai.errors import NotFoundError
+
+        avisos = [{
+            "id": 402,
+            "categoria": "Mochila",
+            "cor": "azul",
+            "marca": "Marca A",
+        }]
+        ferramenta = criar_tool_calcular_compatibilidades(
+            {"categoria": "Mochila", "cor": "azul", "marca": "Marca A"},
+            avisos,
+        )
+        modelos = {
+            "gemini": LLM("gemini", "modelo-inexistente", api_key="chave-ficticia"),
+            "openrouter": LLM("openrouter", "openrouter/free", api_key="chave-ficticia"),
+            "anthropic": LLM("anthropic", "claude-opus-5-5", api_key="chave-ficticia"),
+        }
+        resposta_tool = Completion(
+            text="",
+            model="openrouter/free",
+            provider="openrouter",
+            tool_calls=[ToolCall(id="tool-fallback", name=ferramenta.__name__, args={})],
+        )
+        resposta_final = Completion(
+            text='{"ok": true}',
+            model="openrouter/free",
+            provider="openrouter",
+        )
+
+        with (
+            patch("ia.modelos.configuracao.chave_do_gemini", "chave-ficticia"),
+            patch("ia.modelos.configuracao.chave_do_openrouter", "chave-ficticia"),
+            patch("ia.modelos.configuracao.chave_do_claude", "chave-ficticia"),
+            patch("ia.modelos.LLM", side_effect=lambda provedor, modelo, api_key: modelos[provedor]),
+            patch.object(
+                modelos["gemini"].provider,
+                "complete",
+                side_effect=NotFoundError("modelo inexistente"),
+            ),
+            patch.object(
+                modelos["openrouter"].provider,
+                "complete",
+                side_effect=[resposta_tool, resposta_final],
+            ) as completar_openrouter,
+            patch.object(modelos["anthropic"].provider, "complete") as completar_claude,
+        ):
+            resultado = gerar_resposta_com_agente(
+                "pedido fictício",
+                lambda texto: texto,
+                ferramenta,
+                system="instrução fictícia",
+                modelo_gemini="modelo-inexistente",
+            )
+
+        self.assertEqual(resultado.provedor, "openrouter")
+        self.assertEqual(resultado.resposta, '{"ok": true}')
+        self.assertTrue(resultado.ferramenta_executada)
+        self.assertEqual(completar_openrouter.call_count, 2)
         completar_claude.assert_not_called()
 
     def test_usa_llm_com_resposta_do_provedor(self):
@@ -297,7 +408,10 @@ class TestSugestaoIA(unittest.TestCase):
 
         with (
             patch("ia.sugestao.listar_avisos_para_sugestao", return_value=avisos),
-            patch("ia.sugestao.gerar_resposta", return_value=resposta),
+            patch(
+                "ia.sugestao.gerar_resposta_com_agente",
+                return_value=SimpleNamespace(resposta=resposta),
+            ),
         ):
             resultado = sugerir_correspondencias(None, dados)
 
