@@ -3,9 +3,8 @@ from datetime import date
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from esquemas.ia import SugestaoIACriar
 from ia.modelos import ProvedoresIndisponiveis, provedor_configurado
-from ia.sugestao import sugerir_correspondencias
+from ia.sugestao import SugestaoIACriar, sugerir_correspondencias
 from servicos.aviso import triar_objeto
 
 

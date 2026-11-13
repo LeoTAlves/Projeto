@@ -1,12 +1,67 @@
 # Planejamento do módulo de IA
 
-## Funcionalidade planejada
+## Plano implementado
+
+### Fluxo e limites
+
+- Usuário: Rodrigo, integrante da equipe do balcão.
+- Tela: triagem de achados, em `frontend/src/telas/gestao/balcao/Triagem.jsx`.
+- Entrada: categoria, cor, marca e descrição do objeto recebido; modelo e turno transitórios;
+  pavilhão e data existentes. O backend consulta avisos de perda em aberto.
+- Saída: sugestões com pontuação, características compatíveis, explicação e situação real do aviso.
+  Rodrigo confere, seleciona e confirma antes de usar a rota existente de registro.
+- A rota `POST /ia/sugestoes` não grava. Se todos os provedores falharem, responde HTTP 503 com
+  orientação para continuar pela busca manual.
+- A comparação local exige pelo menos três características compatíveis antes de aceitar uma
+  sugestão do modelo; a resposta também é validada para impedir IDs e características inventados.
+- Os campos modelo e turno são transitórios. Nenhum modelo SQLAlchemy, migration ou regra da
+  cartilha foi alterado para a funcionalidade.
+
+### Provedores e fallback
+
+O Jangada faz as chamadas nesta ordem: Gemini (`gemini-3.5-flash-lite`), OpenRouter
+(`openrouter/free`) e Claude (`claude-opus-5-5`). A cadeia só inclui provedores configurados.
+O fallback foi testado sem chamadas externas: um erro simulado de modelo inexistente no Gemini
+confirma que a resposta fictícia vem de `openrouter`; portanto, o teste não certifica a
+disponibilidade real dos modelos.
+
+### Tools consideradas
+
+- **Função do projeto escolhida:** `calcular_compatibilidades()` em
+  `backend/ia/ferramentas.py`. É um cálculo local, somente de leitura, que compara os cinco
+  atributos permitidos e exige três compatibilidades. O backend usa o resultado para filtrar a
+  resposta da IA; a função não acessa banco nem produz efeitos colaterais.
+- **Tools prontas do Jangada:** nenhuma foi habilitada. `wikipedia_search()` não ajuda a comparar
+  avisos privados do sistema e poderia trazer dados irrelevantes. `web_search()` também não
+  encontra os dados necessários e consumiria cota de busca do provedor sem benefício para o fluxo.
+- **Gravação e envio:** nenhuma tool grava, apaga ou envia dados externos. O único envio é o pedido
+  ao modelo por meio do Jangada, com os dados preparados pelo backend; a pessoa confere a sugestão
+  antes de registrar.
+
+### Passos e verificações
+
+1. Criar `backend/ia/` com `__init__.py`, `modelos.py`, `ferramentas.py` e `sugestao.py`.
+   Verificar ordem Gemini → OpenRouter → Claude e simular um modelo Gemini inexistente para
+   confirmar `provider="openrouter"`.
+2. Implementar a comparação local pura e testar compatibilidade e rejeição de candidatos com menos
+   de três atributos compatíveis usando dados fictícios.
+3. Colocar esquemas, `INSTRUCAO` e funções de IA em `backend/ia/`; manter importações e testes.
+4. Fazer `POST /ia/sugestoes` apenas delegar para a função da pasta de IA; verificar HTTP 503 quando
+   nenhum provedor responde e ausência de `commit`.
+5. Integrar botão, estado de espera, erro, resultado e seleção na triagem; usar a rota existente
+   somente após confirmação humana.
+6. Documentar o módulo e verificar a arquitetura.
+
+Verificações realizadas: dez testes do backend passaram; `npm.cmd run build` no frontend passou;
+`git diff --check` passou; a interface foi testada manualmente pelo responsável. As chamadas reais
+ao Gemini, OpenRouter e Claude não foram validadas.
+
+## Funcionalidade
 
 ### Sugestão de correspondência entre objeto achado e aviso de perda
 
-**Status:** integrada à tela de triagem. A API consulta avisos de perda em
-aberto e o balcão compara as sugestões lado a lado. A busca por texto continua
-disponível. A chamada real ainda precisa ser validada com um provedor configurado.
+**Status:** implementada e integrada à tela de triagem. A chamada real ainda precisa ser validada
+com provedores configurados.
 
 ### Problema
 
@@ -25,17 +80,17 @@ seções “O negócio” e “Perfil B · Rodrigo”.
 
 ### Dados de entrada
 
-Os dados serão enviados em campos separados. A lista prevista é: categoria, cor, marca, modelo,
-características distintivas, pavilhão, turno e data. Os nomes finais dos campos ainda precisam ser
-confirmados `?`.
+O formulário envia categoria, cor, marca, descrição do objeto, pavilhão e `noite` (data). Modelo e
+turno são informados somente para a consulta e não são persistidos. A descrição alimenta as
+características distintivas da comparação.
 
 O turno representa manhã, tarde ou noite. O objeto achado será relacionado a avisos de perda
 existentes, sem receber uma decisão automática da IA.
 
 ### Resultado na tela
 
-A IA deverá mostrar todos os avisos que tenham alguma semelhança, ordenados por relevância. Avisos
-com situação `procurando` terão prioridade.
+A IA mostra somente sugestões validadas com pelo menos três características compatíveis, ordenadas
+com prioridade para avisos `procurando` e depois pela pontuação.
 
 Cada resultado deverá apresentar, no mínimo:
 
@@ -45,10 +100,8 @@ Cada resultado deverá apresentar, no mínimo:
 - justificativa da semelhança;
 - indicação de que a sugestão precisa ser conferida por Rodrigo.
 
-Avisos com situação `devolvido` poderão aparecer para consulta, mas ficarão bloqueados para uma
-nova ocorrência, conforme a regra da cartilha.
-
-O critério mínimo para considerar uma semelhança ainda precisa ser definido `?`.
+O repositório atualmente fornece apenas avisos `procurando`; a validação de respostas ainda marca
+como bloqueado um aviso `devolvido` caso esse estado venha a ser incluído futuramente.
 
 ### Confirmação humana e continuidade
 
@@ -64,53 +117,59 @@ Depois da confirmação, o fluxo existente registra a ocorrência e o serviço a
 Se a IA errar, não encontrar correspondências ou não responder, Rodrigo continuará manualmente pelos
 filtros do balcão, abrirá um aviso e registrará a ocorrência sem a sugestão da IA.
 
-### Arquitetura planejada
+### Arquitetura implementada
 
-Para o MVP, uma chamada ao modelo é suficiente. O backend consultará os avisos, enviará os dados
-estruturados juntamente com as características do objeto e receberá identificadores, relevância e
-justificativas.
+Para o MVP, uma chamada ao modelo é suficiente. O backend consulta avisos abertos, calcula
+compatibilidades localmente e envia os dados ao Jangada. A saída é validada e filtrada pelo
+resultado determinístico antes de ser devolvida à tela.
 
-Será usado um único agente de comparação, com esta responsabilidade:
+Será usada uma chamada de comparação, com esta responsabilidade:
 
 - receber as características do objeto e os avisos selecionados pelo backend;
 - comparar os dados;
 - retornar as correspondências e suas justificativas.
 
-O agente não terá acesso direto ao banco e não terá ferramenta de escrita. O backend será responsável
-por consultar os avisos e validar qualquer operação posterior.
+O modelo não tem acesso direto ao banco nem ferramenta de escrita. O backend consulta os avisos e
+valida a resposta. A função local não consulta o banco e apenas calcula compatibilidades.
 
 Não há justificativa, neste momento, para separar o trabalho em múltiplos agentes. Dividir extração,
 comparação e classificação aumentaria a complexidade sem necessidade comprovada.
 
-Um agente com ferramentas de leitura poderá ser considerado futuramente se o volume de avisos exigir
-consultas em etapas. Para o MVP, enviar os dados consultados pelo backend é mais simples `?`.
+Uma ferramenta de leitura poderá ser considerada futuramente se o volume exigir consultas em
+etapas. Para o MVP, enviar os dados consultados pelo backend é mais simples e mantém controle
+explícito sobre os dados compartilhados.
 
 ### Provedor
 
-O provedor ainda não foi escolhido `?`. A integração deverá ficar isolada em uma camada própria para
-permitir avaliar OpenAI, Claude, Gemini ou outro provedor sem alterar as rotas e a regra do serviço.
+O Jangada isola a chamada aos provedores em `backend/ia/modelos.py`, sem SDK direto do Google ou da
+Anthropic. A ordem escolhida é Gemini principal, OpenRouter grátis como primeira reserva e Claude
+pago como terceira opção. A configuração e as chaves permanecem no servidor.
 
-Os critérios de comparação serão resposta estruturada, qualidade das correspondências, limite de
-contexto, latência, política de dados e facilidade de troca. Não foram assumidos preços ou
-disponibilidade.
+### Integração com o backend
 
-### Integração prevista com o backend
+`POST /ia/sugestoes` exige perfil de equipe ou administrador, consulta os avisos abertos e devolve
+sugestões sem gravar. Se os provedores falharem, responde HTTP 503 e a tela mantém a busca manual.
 
-Será necessária uma operação protegida para solicitar sugestões `?`. Ela deverá apenas consultar os
-avisos e devolver resultados para a tela.
-
-O registro definitivo continuará usando a rota e o serviço de ocorrência já existentes. A regra da
-cartilha continuará no serviço, e uma sugestão da IA nunca será gravada automaticamente.
+O registro definitivo continua usando a rota e o serviço de ocorrência já existentes. A regra da
+cartilha continua no serviço, e uma sugestão da IA nunca é gravada automaticamente.
 
 ## Prompt para teste manual
 
-### Agente
+### Prompt exploratório (histórico)
 
-Será usado um único agente de comparação.
+O bloco abaixo documenta um teste exploratório manual anterior à integração; não é a instrução
+enviada pela aplicação. A instrução atual está em `backend/ia/sugestao.py` na constante
+`INSTRUCAO`, e o prompt de comparação é montado por `montar_prompt()` em
+`backend/ia/ferramentas.py`.
+
+Na aplicação, uma única chamada ao modelo recebe avisos consultados pelo backend e dados fictícios
+ou operacionais do formulário. A ferramenta pronta de busca web e ferramentas externas não são
+incluídas.
 
 - Papel: encontrar possíveis correspondências entre um objeto achado e avisos de perda.
 - Dados recebidos: o objeto achado e a lista de avisos fornecida pelo backend.
-- Ferramentas: nenhuma. O agente não consulta o banco diretamente.
+- Ferramentas: nenhuma ferramenta pronta do Jangada. A compatibilidade é calculada localmente
+  pelo backend antes e depois da chamada ao modelo.
 - Limites: não cria ocorrência, não altera avisos, não decide devolução e não grava dados.
 - Confirmação: Rodrigo revisa e confirma o aviso escolhido.
 

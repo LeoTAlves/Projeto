@@ -3,8 +3,17 @@ import { buscarAviso, buscarCorrespondencias, registrarAchadosDaTriagem, sugerir
 
 const campos = [
   ['Descrição', 'descricao'], ['Categoria', 'categoria'], ['Cor', 'cor'],
-  ['Marca', 'marca'], ['Pavilhão', 'pavilhao'], ['Noite', 'noite'],
+  ['Marca', 'marca'], ['Modelo', 'modelo'], ['Pavilhão', 'pavilhao'],
+  ['Turno', 'turno'], ['Noite', 'noite'],
 ];
+
+const rotulosCaracteristicas = {
+  categoria: 'categoria',
+  cor: 'cor',
+  marca: 'marca',
+  modelo: 'modelo',
+  caracteristicas_distintivas: 'características distintivas',
+};
 
 function CompararObjetos({ achado, perda }) {
   return (
@@ -45,7 +54,11 @@ export default function Triagem({ aviso, aoRegistrar }) {
   const [consultandoIA, setConsultandoIA] = useState(false);
   const [sugestoesIA, setSugestoesIA] = useState(null);
   const [mensagemIA, setMensagemIA] = useState('');
+  // Modelo e turno existem apenas na consulta; o formulário não os envia à rota de gravação.
+  const [modelo, setModelo] = useState('');
+  const [turno, setTurno] = useState('');
 
+  // A consulta envia os dados transitórios e mantém a seleção humana antes de registrar qualquer achado.
   async function buscarComIA() {
     setConsultandoIA(true);
     setMensagemIA('');
@@ -60,18 +73,22 @@ export default function Triagem({ aviso, aoRegistrar }) {
         cor: aviso.cor || extras.cor,
         marca: aviso.marca || extras.marca,
         caracteristicas_distintivas: aviso.descricao, pavilhao: aviso.pavilhao, noite: aviso.noite,
+        modelo: modelo.trim() || null,
+        turno: turno || null,
       });
       const sugestoes = resultado.correspondencias.filter((item) => !item.bloqueado).slice(0, 10);
-      const detalhes = await Promise.allSettled(sugestoes.map(async (item) => {
+      const detalhes = await Promise.all(sugestoes.map(async (item) => {
         const perda = await buscarAviso(item.aviso_id);
-        return { ...perda, explicacao: item.explicacao };
+        return {
+          ...perda,
+          pontuacao: item.pontuacao,
+          caracteristicas_compativeis: item.caracteristicas_compativeis,
+          explicacao: item.explicacao,
+        };
       }));
-      const abertas = detalhes.filter((item) => item.status === 'fulfilled' && item.value.situacao === 'procurando')
-        .map((item) => item.value);
+      const abertas = detalhes.filter((item) => item.situacao === 'procurando');
       if (abertas.length) setSugestoesIA(abertas);
-      setMensagemIA(abertas.length ? (resultado.origem === 'local'
-        ? 'Sugestões pela comparação local. O provedor de IA está indisponível.'
-        : 'Sugestões da IA para conferência.')
+      setMensagemIA(abertas.length ? 'Sugestões da IA para conferência humana.'
         : sugestoes.length ? 'Os avisos sugeridos não estão mais disponíveis. Confira a busca por texto.'
           : resultado.mensagem);
     } catch (falha) {
@@ -95,9 +112,10 @@ export default function Triagem({ aviso, aoRegistrar }) {
   }, [aviso.id, consulta]);
 
   async function registrar(ids) {
-    if (ids.length > 1 && !window.confirm(
-      'Confirme que há um objeto físico distinto para cada um dos ' + ids.length + ' avisos selecionados.'
-    )) return;
+    const confirmacao = ids.length > 1
+      ? 'Confirme que há um objeto físico distinto para cada um dos ' + ids.length + ' avisos selecionados.'
+      : 'Confira a comparação e confirme o aviso escolhido antes de registrar o achado.';
+    if (!window.confirm(confirmacao)) return;
     setErroRegistro('');
     setRegistrando(true);
     try {
@@ -114,7 +132,7 @@ export default function Triagem({ aviso, aoRegistrar }) {
   return (
     <div className="painel-retirada">
       <strong>Possíveis avisos de perda</strong>
-      <p>Compare os avisos abaixo. Para vários objetos físicos, selecione um aviso por objeto.</p>
+      <p>Confira as características e a explicação antes de escolher um aviso. A IA não registra ocorrências.</p>
       <form className="formulario busca-triagem" onSubmit={(evento) => {
         evento.preventDefault();
         setSugestoesIA(null);
@@ -126,11 +144,38 @@ export default function Triagem({ aviso, aoRegistrar }) {
           <input value={texto} maxLength={200} onChange={(evento) => setTexto(evento.target.value)}
             placeholder="Em branco, busca pela descrição do achado" />
         </label>
+        {/* Os campos transitórios fornecem contexto adicional sem alterar o aviso persistido. */}
+        <details>
+          <summary>Informações adicionais para esta consulta</summary>
+          <p>Modelo e turno serão usados somente nesta análise e não serão gravados.</p>
+          <label>
+            Modelo
+            <input value={modelo} maxLength={100} disabled={consultandoIA || registrando} onChange={(evento) => {
+              setModelo(evento.target.value);
+              setSugestoesIA(null);
+              setMensagemIA('');
+            }} />
+          </label>
+          <label>
+            Turno
+            <select value={turno} disabled={consultandoIA || registrando} onChange={(evento) => {
+              setTurno(evento.target.value);
+              setSugestoesIA(null);
+              setMensagemIA('');
+            }}>
+              <option value="">Não informado</option>
+              <option value="manha">Manhã</option>
+              <option value="tarde">Tarde</option>
+              <option value="noite">Noite</option>
+            </select>
+          </label>
+        </details>
         <button type="submit" disabled={carregando || registrando || consultandoIA}>Buscar por texto</button>
         <button type="button" className="botao-secundario" disabled={carregando || registrando || consultandoIA}
           onClick={buscarComIA}>{consultandoIA ? 'Consultando IA...' : 'Buscar sugestões com IA'}</button>
       </form>
       {mensagemIA && <p role="status">{mensagemIA}</p>}
+      {consultandoIA && <p role="status">A IA está comparando os avisos. Aguarde para conferir as sugestões.</p>}
       {carregando && <p role="status">Comparando avisos em aberto...</p>}
       {erro && <p className="mensagem erro" role="alert">{erro}</p>}
       {erroRegistro && <p className="mensagem erro" role="alert">{erroRegistro}</p>}
@@ -145,7 +190,17 @@ export default function Triagem({ aviso, aoRegistrar }) {
               {resultados.map((candidato) => (
                 <li key={candidato.id}>
                   <span className="aviso-numero">Aviso #{candidato.id} · Visitante #{candidato.visitante_id}</span>
-                  <CompararObjetos achado={aviso} perda={candidato} />
+                  <CompararObjetos
+                    achado={{ ...aviso, modelo: modelo.trim() || null, turno: turno || null }}
+                    perda={candidato}
+                  />
+                  {candidato.pontuacao !== undefined && (
+                    <small>
+                      Pontuação indicativa: {candidato.pontuacao}/10 · Características compatíveis:{' '}
+                      {candidato.caracteristicas_compativeis
+                        .map((nome) => rotulosCaracteristicas[nome] || nome).join(', ')}
+                    </small>
+                  )}
                   {candidato.termos_em_comum?.length > 0 && <small>Em comum: {candidato.termos_em_comum.join(', ')}</small>}
                   {candidato.explicacao && <small>{candidato.explicacao}</small>}
                   <label className="triagem-selecao">
@@ -157,19 +212,17 @@ export default function Triagem({ aviso, aoRegistrar }) {
                           ? [...atuais, candidato.id]
                           : atuais.filter((id) => id !== candidato.id));
                       }} />
-                    Selecionar aviso #{candidato.id}
+                    Conferir e selecionar aviso #{candidato.id}
                   </label>
-                  {selecionados.length === 0 && (
-                    <button type="button" disabled={registrando}
-                      onClick={() => registrar([candidato.id])}>Registrar como encontrado</button>
-                  )}
                 </li>
               ))}
             </ul>
             {selecionados.length > 0 && (
               <button className="acao-triagem-lote" type="button" disabled={registrando}
                 onClick={() => registrar(selecionados)}>
-                {registrando ? 'Registrando...' : 'Registrar selecionados (' + selecionados.length + ')'}
+                {registrando ? 'Registrando...' : selecionados.length === 1
+                  ? 'Confirmar aviso e registrar achado'
+                  : 'Confirmar avisos selecionados (' + selecionados.length + ')'}
               </button>
             )}
             </>

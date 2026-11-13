@@ -5,10 +5,15 @@ import configuracao
 from jangada_ai import LLM
 from jangada_ai.errors import LLMError
 
-from ia.ferramentas import INSTRUCAO_SISTEMA
-
 
 T = TypeVar("T")
+
+# Esta ordem mantém Gemini como principal, OpenRouter gratuito como reserva e Claude como última opção.
+PROVEDORES_E_MODELOS = (
+    ("gemini", "gemini-3.5-flash-lite", "chave_do_gemini"),
+    ("openrouter", "openrouter/free", "chave_do_openrouter"),
+    ("anthropic", "claude-opus-5-5", "chave_do_claude"),
+)
 
 
 class ProvedoresIndisponiveis(Exception):
@@ -20,29 +25,40 @@ def provedor_configurado():
 
 
 class ModeloConfigurado:
-    # Carrega apenas provedores com credenciais disponíveis, sem impedir a inicialização da API.
+    # Cria a cadeia na ordem definida e deixa o Jangada tentar uma reserva após a falha anterior.
     def complete(self, prompt, **opcoes):
-        modelos = [
-            LLM(provedor, modelo, api_key=chave)
-            for provedor, modelo, chave in (
-                ("gemini", "gemini-3.5-flash-lite", configuracao.chave_do_gemini),
-                ("openrouter", "openrouter/free", configuracao.chave_do_openrouter),
-                ("anthropic", "claude-opus-5-5", configuracao.chave_do_claude),
-            )
-            if chave
-        ]
-        if not modelos:
-            raise ProvedoresIndisponiveis("Configure um provedor de IA no servidor.")
-        modelo = modelos[0].with_fallback(*modelos[1:]) if len(modelos) > 1 else modelos[0]
-        return modelo.complete(prompt, **opcoes)
+        return criar_modelo_com_fallback().complete(prompt, **opcoes)
+
+
+# A cadeia usa somente provedores configurados e permite substituir o modelo Gemini nos testes.
+def criar_modelo_com_fallback(chaves=None, modelo_gemini=None):
+    if chaves is None:
+        chaves = {
+            nome_chave: getattr(configuracao, nome_chave)
+            for _, _, nome_chave in PROVEDORES_E_MODELOS
+        }
+    modelos = [
+        LLM(
+            provedor,
+            modelo_gemini if provedor == "gemini" and modelo_gemini else modelo,
+            api_key=chaves[nome_chave],
+        )
+        for provedor, modelo, nome_chave in PROVEDORES_E_MODELOS
+        if chaves.get(nome_chave)
+    ]
+    if not modelos:
+        raise ProvedoresIndisponiveis("Configure um provedor de IA no servidor.")
+    return modelos[0].with_fallback(*modelos[1:]) if len(modelos) > 1 else modelos[0]
 
 
 llm = ModeloConfigurado()
 
 
-def gerar_resposta(prompt: str, interpretar: Callable[[str], T]) -> T:
+# A chamada converte erros do provedor, respostas vazias e formatos inválidos em uma falha recuperável.
+def gerar_resposta(prompt: str, interpretar: Callable[[str], T], system: str | None = None) -> T:
     try:
-        resposta = llm.complete(prompt, system=INSTRUCAO_SISTEMA)
+        opcoes = {"system": system} if system else {}
+        resposta = llm.complete(prompt, **opcoes)
     except LLMError as erro:
         raise ProvedoresIndisponiveis(
             "Nenhum provedor de IA retornou uma resposta."

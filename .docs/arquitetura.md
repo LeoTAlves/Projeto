@@ -30,9 +30,23 @@ O perfil `admin` é aceito na saída, mas não como tipo de uma nova conta criad
 `docs/liberar_admin.sql` promove somente a conta indicada pelo responsável no Supabase.
 É necessário que ela já exista com senha criada pela aplicação. O SQL não foi executado.
 
-## Módulo de IA planejado
+## Módulo de IA
 
-O módulo ainda não foi implementado. A proposta registrada em `.docs/ia.md` usa um único agente de
-comparação, sem acesso direto ao banco e sem ferramentas de escrita. O backend deverá montar os
-dados, o agente deverá sugerir correspondências e Rodrigo deverá confirmar antes do registro.
+`backend/ia/` concentra a integração de IA, sem misturar chamadas a provedores com rotas, regras de
+ocorrência ou persistência:
 
+- `modelos.py`: configura Gemini, OpenRouter e Claude pela biblioteca Jangada e define o fallback.
+- `ferramentas.py`: calcula localmente quais avisos têm pelo menos três características
+  compatíveis e monta os dados do prompt. O cálculo não acessa nem altera o banco.
+- `sugestao.py`: mantém `INSTRUCAO`, esquemas da solicitação e resposta, consulta avisos pelo
+  repositório, valida e filtra as sugestões, além de centralizar a extração de atributos.
+- `__init__.py`: torna a pasta um pacote Python.
+
+`backend/rotas/ia.py` valida e encaminha a solicitação para funções de `backend/ia/`; a rota de
+sugestões não grava e converte indisponibilidade total dos provedores em HTTP 503. O repositório
+fornece avisos abertos para comparação. A tela `Triagem.jsx` apresenta os resultados, permite a
+conferência e só então chama a rota existente de registro.
+
+O modelo não recebe acesso direto à sessão ou ao banco e não dispõe de ferramenta de escrita. A
+função de compatibilidade é somente de cálculo; buscas externas prontas do Jangada não são usadas.
+Os dados modelo e turno são transitórios e nenhum modelo ou migration foi alterado para a IA.
