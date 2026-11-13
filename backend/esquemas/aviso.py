@@ -43,6 +43,7 @@ class AvisoSaida(AtributosObjeto):
     situacao: Literal["procurando", "aguardando retirada", "devolvido", "triado", "cancelado"]
     local_guarda: str | None = None
     recebido_por: str | None = None
+    aviso_vinculado_id: int | None = None
     origem_achado_id: int | None = None
     situacao_desde: datetime | None = None
 

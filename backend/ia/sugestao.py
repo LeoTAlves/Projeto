@@ -83,7 +83,7 @@ def _interpretar_resposta(texto: str) -> SugestaoIAModelo:
         raise ValueError("O provedor retornou um formato de sugestão inválido.") from erro
 
 
-def sugerir_correspondencias(sessao, dados: SugestaoIACriar) -> SugestaoIAResposta:
+def sugerir_correspondencias(sessao, dados: SugestaoIACriar, avisos=None) -> SugestaoIAResposta:
     objeto = dados.model_dump()
     caracteristicas = contar_caracteristicas(objeto)
     if len(caracteristicas) < 3:
@@ -92,7 +92,8 @@ def sugerir_correspondencias(sessao, dados: SugestaoIACriar) -> SugestaoIARespos
             mensagem="Informe pelo menos três características do objeto para solicitar sugestões.",
         )
 
-    avisos = listar_avisos_para_sugestao(sessao)
+    if avisos is None:
+        avisos = listar_avisos_para_sugestao(sessao)
     if not avisos:
         return SugestaoIAResposta(
             situacao="sem_correspondencias",

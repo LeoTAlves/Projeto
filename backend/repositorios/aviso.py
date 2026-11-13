@@ -23,7 +23,8 @@ def bloquear_aviso(sessao, aviso_id):
 
 
 def bloquear_avisos(sessao, ids):
-    consulta = select(Aviso).where(Aviso.id.in_(ids)).order_by(Aviso.id).with_for_update()
+    consulta = (select(Aviso).where(Aviso.id.in_(ids)).order_by(Aviso.id)
+                .with_for_update().execution_options(populate_existing=True))
     return {aviso.id: aviso for aviso in sessao.scalars(consulta)}
 
 
@@ -64,6 +65,14 @@ def percorrer_perdas_abertas(sessao):
 
 def listar_avisos_para_sugestao(sessao):
     return list(percorrer_perdas_abertas(sessao))
+
+
+# Apenas achados ainda disponíveis podem corresponder a uma perda recém-criada.
+def percorrer_achados_disponiveis(sessao):
+    consulta = select(Aviso).where(
+        Aviso.situacao == "aguardando retirada", Aviso.visitante_id.is_(None)
+    ).execution_options(yield_per=100)
+    return sessao.scalars(consulta)
 
 
 def perdas_do_visitante(sessao, visitante_id):

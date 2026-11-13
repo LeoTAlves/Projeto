@@ -301,32 +301,32 @@ textarea { resize: vertical; line-height: 1.6; }
 
 /* A hierarquia de cores acompanha os dois temas, com texto e símbolos junto às situações. */
 :root {
-  --superficie-busca: #e9f4f5;
-  --superficie-opcoes: #f1eef9;
-  --nav-ativa: #d5ecee;
-  --nav-texto: #153e48;
-  --procurando-fundo: #fffaee;
-  --procurando-faixa: #9c6513;
-  --retirada-fundo: #edf7ff;
-  --retirada-faixa: #3568a5;
-  --devolvido-fundo: #eef9f1;
-  --devolvido-faixa: #33734f;
-  --encerrado-fundo: #f3f0f8;
-  --encerrado-faixa: #726093;
+  --superficie-busca: #dcf6ff;
+  --superficie-opcoes: #ece0ff;
+  --nav-ativa: #5728ac;
+  --nav-texto: #fff;
+  --procurando-fundo: #fff0b5;
+  --procurando-faixa: #a45300;
+  --retirada-fundo: #d6ecff;
+  --retirada-faixa: #005cca;
+  --devolvido-fundo: #d1f5df;
+  --devolvido-faixa: #007447;
+  --encerrado-fundo: #eadcff;
+  --encerrado-faixa: #7137b8;
 }
 :root[data-tema="escuro"] {
-  --superficie-busca: #20393f;
-  --superficie-opcoes: #312940;
-  --nav-ativa: #234d54;
-  --nav-texto: #e4f8f6;
-  --procurando-fundo: #362d20;
-  --procurando-faixa: #e5b95c;
-  --retirada-fundo: #1e354c;
-  --retirada-faixa: #87b9fb;
-  --devolvido-fundo: #20382f;
-  --devolvido-faixa: #80c8a2;
-  --encerrado-fundo: #302940;
-  --encerrado-faixa: #bda9e6;
+  --superficie-busca: #073a51;
+  --superficie-opcoes: #39225a;
+  --nav-ativa: #c9a4ff;
+  --nav-texto: #221038;
+  --procurando-fundo: #442c09;
+  --procurando-faixa: #ffbd38;
+  --retirada-fundo: #0b3260;
+  --retirada-faixa: #58b8ff;
+  --devolvido-fundo: #0c3c2e;
+  --devolvido-faixa: #45e79c;
+  --encerrado-fundo: #3b2455;
+  --encerrado-faixa: #c98aff;
 }
 body { font-size: 1.0625rem; }
 .texto-apoio, .formulario label, .cartao label, input, select, textarea { font-size: 1rem; }
@@ -345,8 +345,11 @@ body { font-size: 1.0625rem; }
 .filtros-fila, [data-tema="escuro"] .filtros-fila { background: var(--superficie-opcoes); }
 .lista-avisos > li[data-situacao] {
   background: var(--fundo-situacao, var(--encerrado-fundo));
-  border-inline-start: 4px solid var(--faixa-situacao, var(--encerrado-faixa));
+  border-inline-start: 6px solid var(--faixa-situacao, var(--encerrado-faixa));
 }
+.lista-avisos > li[data-situacao] .aviso-metadados,
+.lista-avisos > li[data-situacao] .aviso-numero,
+.lista-avisos > li[data-situacao] .botao-aviso > span:not(.etiqueta) { color: inherit; }
 .lista-avisos > li[data-situacao="procurando"] {
   --fundo-situacao: var(--procurando-fundo);
   --faixa-situacao: var(--procurando-faixa);

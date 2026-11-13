@@ -20,7 +20,8 @@ def registrar_evento(sessao, aviso, tipo, descricao, usuario):
     agora = datetime.now(timezone.utc)
     sessao.add(Ocorrencia(
         aviso_id=aviso.id, tipo=tipo, descricao=descricao[:200], data=agora.date(),
-        atendente=f"#{usuario.id} {usuario.nome}"[:100], registrada_em=agora,
+        atendente=(f"#{usuario.id} {usuario.nome}"[:100] if usuario else "Triagem automática"),
+        registrada_em=agora,
     ))
 
 
@@ -53,7 +54,7 @@ def triar_objeto(sessao, achado, busca=None):
 
 
 # Valida todo o lote antes de gravar o achado em cada aviso selecionado.
-def confirmar_triagem(sessao, achado_id, aviso_ids, usuario):
+def confirmar_triagem(sessao, achado_id, aviso_ids, usuario, automatica=False):
     ids = set(aviso_ids)
     if achado_id in ids or len(ids) != len(aviso_ids):
         return "Selecione avisos de perda distintos."
@@ -73,8 +74,9 @@ def confirmar_triagem(sessao, achado_id, aviso_ids, usuario):
         perda.local_guarda = achado.local_guarda
         perda.recebido_por = achado.recebido_por
         perda.nonce_retirada = token_hex(32)
+        origem = "triagem automática" if automatica else "triagem"
         registrar_evento(sessao, perda, "objeto achado",
-                         f"Achado confirmado na triagem #{achado.id}: {achado.descricao}", usuario)
+                         f"Achado confirmado na {origem} #{achado.id}: {achado.descricao}", usuario)
     # Fecha o registro de entrada para evitar uma segunda retirada do mesmo lote.
     mudar_situacao(achado, "triado")
     sessao.commit()
@@ -123,20 +125,27 @@ def criar_aviso(sessao, dados, usuario):
         "situacao_desde": datetime.now(timezone.utc),
         "visitante_id": usuario.id,
     }
-    return repositorio_aviso.criar_aviso(sessao, dados_do_aviso)
+    perda = repositorio_aviso.criar_aviso(sessao, dados_do_aviso)
+    from servicos.triagem_automatica import triar_ao_registrar
+    triar_ao_registrar(sessao, perda)
+    return perda
 
 
 # O balcão recebe o objeto mesmo quando o dono ainda é desconhecido.
 def registrar_objeto_no_balcao(sessao, dados, usuario):
     agora = datetime.now(timezone.utc)
     # Sem data do achado, o sistema usa a data do registro e deixa o pavilhão como desconhecido.
-    return repositorio_aviso.criar_aviso(sessao, {
+    achado = repositorio_aviso.criar_aviso(sessao, {
         **dados, "visitante_id": None, "situacao": "aguardando retirada",
         "pavilhao": dados.get("pavilhao") or "Não informado",
         "noite": dados.get("noite") or agora.date(),
         "situacao_desde": agora,
         "recebido_por": f"#{usuario.id} {usuario.nome}"[:100],
     })
+    from servicos.triagem_automatica import triar_ao_registrar
+    perda_id = triar_ao_registrar(sessao, achado)
+    achado.aviso_vinculado_id = perda_id
+    return achado
 
 
 # O bloqueio impede que o cancelamento e a confirmação do achado disputem o aviso.

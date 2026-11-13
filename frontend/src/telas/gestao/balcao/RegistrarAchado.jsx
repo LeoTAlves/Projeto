@@ -16,7 +16,7 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
     setErro('');
     try {
       const achado = await registrarObjetoBalcao({ descricao: texto });
-      aoAbrirAviso(achado.id);
+      aoAbrirAviso(achado.aviso_vinculado_id ?? achado.id);
     } catch (falha) {
       setErro(falha.message);
     } finally {

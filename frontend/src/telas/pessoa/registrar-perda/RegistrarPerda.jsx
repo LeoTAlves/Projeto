@@ -40,7 +40,9 @@ function RegistrarPerda({ aoAbrirAviso }) {
         descricao, pavilhao, noite, categoria: categoria || null,
         cor: cor.trim() || null, marca: marca.trim() || null,
       });
-      setMensagem(`Aviso ${resultado.id} registrado com a situação ${resultado.situacao}.`);
+      setMensagem(resultado.situacao === 'aguardando retirada'
+        ? 'Objeto encontrado pela triagem automática. Consulte o código de retirada em Meus avisos.'
+        : `Aviso ${resultado.id} registrado. O sistema continua procurando um achado compatível.`);
       setDescricao('');
       setPavilhao('Pavilhao 1');
       setNoite('2026-10-10');

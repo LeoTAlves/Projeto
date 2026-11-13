@@ -160,6 +160,12 @@ A triagem mostra os dados lado a lado e oferece busca por texto e
 sugestões com IA. O cadastro sugere atributos e, para visitantes, avisa sobre
 possíveis duplicidades entre os avisos da própria conta.
 
+Ao registrar uma perda ou um achado, a API compara com os registros disponíveis
+do outro tipo. Uma correspondência única e forte nos dois sentidos é registrada
+automaticamente. Quando configurado, o agente pode validar o par. A comparação
+local continua disponível se o provedor estiver indisponível. Pares ambíguos
+continuam na fila de triagem.
+
 O código fica disponível para o visitante assim que o achado estiver vinculado.
 **Corrigir vínculo** invalida o código. Um novo vínculo gera outro código.
 O comprovante aparece no histórico após a entrega.
