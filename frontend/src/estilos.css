@@ -345,12 +345,26 @@ textarea { resize: vertical; line-height: 1.6; }
   --devolvido-faixa: #007447;
   --encerrado-fundo: #eadcff;
   --encerrado-faixa: #7137b8;
+  --cancelado-fundo: #ffdde2;
+  --cancelado-faixa: #ad2143;
+  --selecao-aviso: #375ec6;
 }
 :root[data-tema="escuro"] {
   --superficie-busca: var(--surface-2);
   --superficie-opcoes: var(--surface-2);
   --nav-ativa: var(--accent);
   --nav-texto: var(--bg);
+  --procurando-fundo: #523704;
+  --procurando-faixa: var(--warn);
+  --retirada-fundo: #103b72;
+  --retirada-faixa: var(--info);
+  --devolvido-fundo: #123f30;
+  --devolvido-faixa: var(--ok);
+  --encerrado-fundo: #482766;
+  --encerrado-faixa: var(--fix);
+  --cancelado-fundo: #592337;
+  --cancelado-faixa: var(--danger);
+  --selecao-aviso: var(--accent);
 }
 body { font-size: 1.0625rem; }
 .texto-apoio, .formulario label, .cartao label, input, select, textarea { font-size: 1rem; }
@@ -367,45 +381,52 @@ body { font-size: 1.0625rem; }
 .filtros-atendimento, .painel-retirada { background: var(--superficie-busca); }
 .filtros-atendimento { padding: 0.85rem; border-radius: 12px; }
 .filtros-fila, [data-tema="escuro"] .filtros-fila { background: var(--superficie-opcoes); }
-.lista-avisos > li[data-situacao] {
+.lista-avisos > li[data-situacao],
+.lista-ocorrencias > li:has(> .etiqueta) {
   background: var(--fundo-situacao, var(--encerrado-fundo));
   border-inline-start: 6px solid var(--faixa-situacao, var(--encerrado-faixa));
 }
 .lista-avisos > li[data-situacao] .aviso-metadados,
 .lista-avisos > li[data-situacao] .aviso-numero,
 .lista-avisos > li[data-situacao] .botao-aviso > span:not(.etiqueta) { color: inherit; }
-.lista-avisos > li[data-situacao="procurando"] {
+[data-situacao="procurando"] {
   --fundo-situacao: var(--procurando-fundo);
   --faixa-situacao: var(--procurando-faixa);
 }
-.lista-avisos > li[data-situacao="aguardando retirada"] {
+[data-situacao="aguardando retirada"],
+.lista-ocorrencias > li:has(> .etiqueta-retirada) {
   --fundo-situacao: var(--retirada-fundo);
   --faixa-situacao: var(--retirada-faixa);
 }
-.lista-avisos > li[data-situacao="devolvido"] {
+[data-situacao="devolvido"],
+.lista-ocorrencias > li:has(> .etiqueta-devolvido) {
   --fundo-situacao: var(--devolvido-fundo);
   --faixa-situacao: var(--devolvido-faixa);
 }
+[data-situacao="cancelado"],
+.lista-ocorrencias > li:has(> .etiqueta-cancelado) {
+  --fundo-situacao: var(--cancelado-fundo);
+  --faixa-situacao: var(--cancelado-faixa);
+}
 .lista-avisos > li[data-situacao].selecionado {
-  outline: 2px solid var(--faixa-situacao, var(--encerrado-faixa));
+  outline: 2px solid var(--selecao-aviso);
   box-shadow: none;
 }
 
-/* No escuro, a seleção é independente da situação do aviso. */
-[data-tema="escuro"] .lista-avisos > li[data-situacao] {
-  background: var(--surface);
+/* A faixa mantém a cor da situação mesmo quando o cartão recebe o contorno de seleção. */
+[data-tema="escuro"] .lista-avisos > li[data-situacao],
+[data-tema="escuro"] .lista-ocorrencias > li:has(> .etiqueta) {
+  background: var(--fundo-situacao, var(--encerrado-fundo));
   border-color: var(--border-card);
+  border-inline-start-color: var(--faixa-situacao, var(--encerrado-faixa));
 }
-[data-tema="escuro"] .lista-avisos > li.selecionado {
-  background: var(--surface-2);
-  border-color: var(--accent);
-  outline-color: var(--accent);
-  box-shadow: none;
+[data-tema="escuro"] .lista-avisos > li[data-situacao] .botao-aviso:hover:not(:disabled) {
+  background: transparent;
 }
 [data-tema="escuro"] .lista-avisos > li .aviso-numero,
 [data-tema="escuro"] .lista-avisos > li .aviso-metadados,
 [data-tema="escuro"] .lista-avisos .botao-aviso > span:not(.etiqueta):not(.aviso-numero) {
   color: var(--text-2);
 }
-[data-tema="escuro"] .lista-ocorrencias small,
+[data-tema="escuro"] .lista-ocorrencias small { color: var(--text-2); }
 [data-tema="escuro"] .atendimento-resumo small { color: var(--text-3); }
