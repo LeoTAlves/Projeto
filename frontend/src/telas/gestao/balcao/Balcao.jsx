@@ -27,6 +27,7 @@ export default function Balcao({ avisoInicial }) {
   const [erro, setErro] = useState('');
   const [avisoId, setAvisoId] = useState(avisoInicial || null);
   const [numero, setNumero] = useState('');
+  const [busca, setBusca] = useState('');
   const [pendencia, setPendencia] = useState('');
   const [tentativa, setTentativa] = useState(0);
 
@@ -35,12 +36,12 @@ export default function Balcao({ avisoInicial }) {
     let ativa = true;
     setCarregando(true);
     setErro('');
-    listarAvisos({ pavilhao, pagina, pendencia })
+    listarAvisos({ pavilhao, pagina, pendencia, busca })
       .then((resultado) => { if (ativa) setAvisos(resultado); })
       .catch((falha) => { if (ativa) setErro(falha.message); })
       .finally(() => { if (ativa) setCarregando(false); });
     return () => { ativa = false; };
-  }, [pavilhao, pagina, pendencia, avisoId, tentativa]);
+  }, [pavilhao, pagina, pendencia, avisoId, tentativa, busca]);
 
   if (avisoId) {
     return <Ocorrencia key={avisoId} avisoId={avisoId}
@@ -53,20 +54,17 @@ export default function Balcao({ avisoInicial }) {
       <div className="filtros-atendimento">
         <form className="busca-aviso" onSubmit={(evento) => {
           evento.preventDefault();
-          const id = Number(numero);
-          if (Number.isSafeInteger(id) && id > 0) setAvisoId(id);
+          const termo = numero.trim();
+          const id = termo.match(/^#?([0-9]{1,15})$/)?.[1];
+          if (id && Number(id) > 0) setAvisoId(Number(id));
+          else { setBusca(termo); setPagina(1); }
         }}>
           <label>
-            Número do aviso ou da etiqueta
-            <input type="text" inputMode="numeric" required pattern="[0-9]+" maxLength={15}
-              placeholder="Ex. 123" value={numero}
-              onChange={(evento) => {
-                evento.target.setCustomValidity(Number(evento.target.value) === 0 && evento.target.value
-                  ? 'Informe um número maior que zero.' : '');
-                setNumero(evento.target.value);
-              }} />
+            Número da etiqueta ou descrição
+            <input type="search" maxLength={100} placeholder="Ex. 123 ou mochila preta"
+              value={numero} onChange={(evento) => setNumero(evento.target.value)} />
           </label>
-          <button type="submit">Abrir aviso</button>
+          <button type="submit">Buscar</button>
         </form>
         <label>
           Pavilhão
@@ -78,6 +76,8 @@ export default function Balcao({ avisoInicial }) {
           </select>
         </label>
       </div>
+      {busca && <p>Busca por “{busca}” <button type="button" className="botao-secundario"
+        onClick={() => { setNumero(''); setBusca(''); setPagina(1); }}>Limpar busca</button></p>}
       <div className="navegacao filtros-fila" role="group" aria-label="Filtrar por etapa do atendimento">
         {filas.map(([valor, rotulo]) => (
           <button key={valor} type="button" aria-pressed={pendencia === valor}

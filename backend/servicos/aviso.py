@@ -84,8 +84,8 @@ def confirmar_triagem(sessao, achado_id, aviso_ids, usuario, automatica=False):
 
 
 # O serviço repassa os filtros; o repositório monta a consulta paginada no banco.
-def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=None):
-    return repositorio_aviso.listar_avisos(sessao, pavilhao, visitante_id, pagina, pendencia)
+def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=None, busca=None):
+    return repositorio_aviso.listar_avisos(sessao, pavilhao, visitante_id, pagina, pendencia, busca)
 
 
 def possiveis_duplicados(sessao, descricao, visitante_id):
@@ -200,12 +200,24 @@ def corrigir_vinculo(sessao, aviso_id, usuario):
                 sessao.add(type(origem)(
                     descricao=origem.descricao, pavilhao=origem.pavilhao, noite=origem.noite,
                     categoria=origem.categoria, cor=origem.cor, marca=origem.marca,
-                    local_guarda=origem.local_guarda, recebido_por=origem.recebido_por,
+                    local_guarda=aviso.local_guarda, recebido_por=origem.recebido_por,
                     situacao="aguardando retirada", situacao_desde=datetime.now(timezone.utc),
                 ))
         aviso.origem_achado_id = None
         aviso.local_guarda = None
         aviso.recebido_por = None
         mudar_situacao(aviso, "procurando")
+    sessao.commit()
+    return aviso
+
+
+# Guarda o endereço na ficha usada para entregar ou etiquetar o objeto.
+def atualizar_local_guarda(sessao, aviso_id, local):
+    aviso = repositorio_aviso.bloquear_aviso(sessao, aviso_id)
+    if aviso is None:
+        return None
+    if aviso.situacao != "aguardando retirada":
+        return "Só é possível editar o local de objetos aguardando retirada."
+    aviso.local_guarda = local or None
     sessao.commit()
     return aviso

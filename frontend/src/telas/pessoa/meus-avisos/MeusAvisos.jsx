@@ -70,29 +70,43 @@ function MeusAvisos({ visitanteId, avisoInicial }) {
   if (carregando) return <section className="cartao"><p>Carregando avisos...</p></section>;
   if (erro) return <section className="cartao"><p className="erro">{erro}</p></section>;
 
+  const prontos = avisos.filter((aviso) => aviso.situacao === 'aguardando retirada');
+  const outros = avisos.filter((aviso) => aviso.situacao !== 'aguardando retirada');
+
+  // O cartão abre o histórico ou revela o código sem exigir que o histórico esteja aberto.
+  function cartaoAviso(aviso) {
+    return (
+      <li key={aviso.id} data-situacao={aviso.situacao}
+        className={avisoSelecionado?.id === aviso.id ? 'selecionado' : ''}>
+        <button type="button" className="botao-aviso" disabled={cancelando || carregandoDetalhe}
+          onClick={() => abrirAviso(aviso.id)}>
+          <span className="aviso-numero">Aviso #{aviso.id}</span>
+          <strong>{aviso.descricao}</strong>
+          <span>{aviso.pavilhao}</span>
+          <Situacao valor={aviso.situacao} />
+        </button>
+        {aviso.situacao === 'aguardando retirada' && <CodigoRetirada compacto avisoId={aviso.id} />}
+      </li>
+    );
+  }
+
   return (
     <section className="tela-dupla">
       <div className="cartao lista">
         <h3>Meus avisos</h3>
         <p className="texto-apoio">Acompanhe o caminho de volta dos seus objetos.</p>
-        <LegendaSituacoes />
-        {avisos.length === 0 ? (
-          <p>Nenhum aviso registrado.</p>
-        ) : (
-          <ul className="lista-avisos">
-            {avisos.map((aviso) => (
-              <li key={aviso.id} data-situacao={aviso.situacao}
-                className={avisoSelecionado?.id === aviso.id ? 'selecionado' : ''}>
-                <button type="button" className="botao-aviso" disabled={cancelando || carregandoDetalhe} onClick={() => abrirAviso(aviso.id)}>
-                  <span className="aviso-numero">Aviso #{aviso.id}</span>
-                  <strong>{aviso.descricao}</strong>
-                  <span>{aviso.pavilhao}</span>
-                  <Situacao valor={aviso.situacao} />
-                </button>
-              </li>
-            ))}
-          </ul>
+        {prontos.length > 0 && (
+          <section aria-labelledby="prontos-retirada">
+            <h4 id="prontos-retirada">Prontos para retirada</h4>
+            <ul className="lista-avisos">{prontos.map(cartaoAviso)}</ul>
+          </section>
         )}
+        {prontos.length > 0 && outros.length > 0 && <h4>Outros avisos</h4>}
+        <LegendaSituacoes />
+        {avisos.length === 0 && (
+          <p>Nenhum aviso registrado.</p>
+        )}
+        {outros.length > 0 && <ul className="lista-avisos">{outros.map(cartaoAviso)}</ul>}
         <Paginacao pagina={pagina} quantidade={avisos.length} carregando={carregando || cancelando} aoMudar={setPagina} />
       </div>
 
@@ -118,7 +132,7 @@ function MeusAvisos({ visitanteId, avisoInicial }) {
               </div>
             )}
             {avisoSelecionado.situacao === 'cancelado' && <p role="status">A busca por este aviso foi encerrada.</p>}
-            {avisoSelecionado.situacao === 'aguardando retirada' && (
+            {avisoSelecionado.situacao === 'aguardando retirada' && !prontos.some((aviso) => aviso.id === avisoSelecionado.id) && (
               <CodigoRetirada key={avisoSelecionado.id} avisoId={avisoSelecionado.id} />
             )}
 

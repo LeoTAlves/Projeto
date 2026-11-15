@@ -1,25 +1,41 @@
-import { useState } from 'react';
-import { buscarDuplicados, criarAviso, sugerirAtributos } from '../../../servicos/api';
+import { useEffect, useState } from 'react';
+import { buscarDuplicados, criarAviso } from '../../../servicos/api';
+import { analisarDescricao, contextoDaDescricao, descricaoGenerica } from '../../../servicos/descricaoObjeto';
 
 const categorias = [
   'Celulares e eletrônicos', 'Carteiras e documentos', 'Chaves', 'Óculos',
   'Bolsas e mochilas', 'Roupas e acessórios', 'Outros',
 ];
 
-// A tela de visitante registra o aviso novo com descrição, pavilhão e noite.
-function RegistrarPerda({ aoAbrirAviso }) {
-  const [descricao, setDescricao] = useState('');
-  const [pavilhao, setPavilhao] = useState('Pavilhao 1');
-  const [noite, setNoite] = useState('2026-10-10');
+// O rascunho é separado por conta e continua opcional se o navegador bloquear armazenamento.
+function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
+  const chaveRascunho = 'cade-rascunho-perda-' + visitanteId;
+  const [rascunho] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(chaveRascunho)) || {}; }
+    catch { return {}; }
+  });
+  const [descricao, setDescricao] = useState(rascunho.descricao || '');
+  const [pavilhao, setPavilhao] = useState(rascunho.pavilhao || '');
+  const [noite, setNoite] = useState(rascunho.noite || '');
   const [mensagem, setMensagem] = useState('');
   const [erro, setErro] = useState(false);
   const [carregando, setCarregando] = useState(false);
-  const [categoria, setCategoria] = useState('');
-  const [cor, setCor] = useState('');
-  const [marca, setMarca] = useState('');
+  const [categoria, setCategoria] = useState(rascunho.categoria || '');
+  const [cor, setCor] = useState(rascunho.cor || '');
+  const [marca, setMarca] = useState(rascunho.marca || '');
   const [duplicados, setDuplicados] = useState([]);
-  const [sugestao, setSugestao] = useState(null);
+  const [assistencia, setAssistencia] = useState('');
   const [consultandoIA, setConsultandoIA] = useState(false);
+  const [avisoSalvo, setAvisoSalvo] = useState(null);
+
+  // Guarda as edições e remove o rascunho quando o formulário é limpo após o envio.
+  useEffect(() => {
+    try {
+      const campos = { descricao, pavilhao, noite, categoria, cor, marca };
+      if (Object.values(campos).some(Boolean)) localStorage.setItem(chaveRascunho, JSON.stringify(campos));
+      else localStorage.removeItem(chaveRascunho);
+    } catch { /* O cadastro continua disponível sem armazenamento local. */ }
+  }, [chaveRascunho, descricao, pavilhao, noite, categoria, cor, marca]);
 
   // O envio usa o visitante escolhido no perfil e mostra claramente sucesso ou falha.
   const enviarFormulario = async (evento) => {
@@ -40,17 +56,18 @@ function RegistrarPerda({ aoAbrirAviso }) {
         descricao, pavilhao, noite, categoria: categoria || null,
         cor: cor.trim() || null, marca: marca.trim() || null,
       });
+      setAvisoSalvo(resultado.id);
       setMensagem(resultado.situacao === 'aguardando retirada'
         ? 'Objeto encontrado pela triagem automática. Consulte o código de retirada em Meus avisos.'
         : `Aviso ${resultado.id} registrado. O sistema continua procurando um achado compatível.`);
       setDescricao('');
-      setPavilhao('Pavilhao 1');
-      setNoite('2026-10-10');
+      setPavilhao('');
+      setNoite('');
       setCategoria('');
       setCor('');
       setMarca('');
       setDuplicados([]);
-      setSugestao(null);
+      setAssistencia('');
     } catch (falha) {
       setErro(true);
       setMensagem(falha.message);
@@ -59,18 +76,25 @@ function RegistrarPerda({ aoAbrirAviso }) {
     }
   };
 
+  // Preenche campos vazios e mantém os valores que a Lúcia já informou.
   async function sugerir() {
     setConsultandoIA(true);
     setMensagem('');
     setErro(false);
-    setSugestao(null);
+    setAssistencia('');
+    const contexto = contextoDaDescricao(descricao);
+    setPavilhao(pavilhao || contexto.pavilhao || '');
+    setNoite(noite || contexto.noite || '');
     try {
-      const resposta = await sugerirAtributos(descricao);
-      if (resposta.categoria || resposta.cor || resposta.marca) setSugestao(resposta);
-      else setMensagem('A descrição não trouxe atributos suficientes. Preencha os campos manualmente.');
-    } catch (falha) {
-      setErro(true);
-      setMensagem(falha.message);
+      const resposta = await analisarDescricao(descricao);
+      setCategoria(categoria || resposta.categoria || '');
+      setCor(cor || resposta.cor || '');
+      setMarca(marca || resposta.marca || '');
+      const faltam = [!(pavilhao || resposta.pavilhao) && 'pavilhão', !(noite || resposta.noite) && 'data'].filter(Boolean);
+      setAssistencia(faltam.length ? 'Revise os dados e informe ' + faltam.join(' e ') + '.'
+        : 'Revise os campos antes de registrar.');
+    } catch {
+      setAssistencia('A sugestão de atributos está indisponível. Você pode completar ou revisar os campos.');
     } finally {
       setConsultandoIA(false);
     }
@@ -89,27 +113,20 @@ function RegistrarPerda({ aoAbrirAviso }) {
             minLength="3"
             maxLength="200"
             value={descricao}
-            onChange={(evento) => { setDescricao(evento.target.value); setDuplicados([]); setSugestao(null); }}
+            onChange={(evento) => { setDescricao(evento.target.value); setDuplicados([]); setAssistencia(''); setAvisoSalvo(null); }}
             rows="4"
-            placeholder="Descreva o objeto perdido"
+            placeholder="Ex. Perdi meus óculos pretos no pavilhão 2 ontem à noite"
           />
         </label>
         <button type="button" className="botao-secundario" disabled={descricao.trim().length < 3}
-          onClick={sugerir}>{consultandoIA ? 'Consultando IA...' : 'Sugerir atributos com IA'}</button>
-        {sugestao && (
-          <div className="painel-retirada">
-            <p>Atributos sugeridos — {[sugestao.categoria, sugestao.cor, sugestao.marca].filter(Boolean).join(' · ')}</p>
-            <button type="button" className="botao-secundario" onClick={() => {
-              setCategoria(sugestao.categoria || categoria);
-              setCor(sugestao.cor || cor);
-              setMarca(sugestao.marca || marca);
-              setSugestao(null);
-            }}>Usar sugestão</button>
-          </div>
+          onClick={sugerir}>{consultandoIA ? 'Analisando descrição...' : 'Preencher com ajuda da IA'}</button>
+        {assistencia && <p role="status">{assistencia}</p>}
+        {descricaoGenerica(descricao) && (
+          <small>Se souber, acrescente uma marca, risco, adesivo ou acessório à descrição.</small>
         )}
         <label>
           Categoria
-          <select required value={categoria} onChange={(evento) => setCategoria(evento.target.value)}>
+          <select value={categoria} onChange={(evento) => setCategoria(evento.target.value)}>
             <option value="">Selecione uma categoria</option>
             {categorias.map((nome) => <option key={nome}>{nome}</option>)}
           </select>
@@ -122,7 +139,8 @@ function RegistrarPerda({ aoAbrirAviso }) {
         <div className="formulario">
         <label>
           Pavilhão
-          <select value={pavilhao} onChange={(evento) => setPavilhao(evento.target.value)}>
+          <select required value={pavilhao} onChange={(evento) => setPavilhao(evento.target.value)}>
+            <option value="">Selecione o pavilhão</option>
             <option value="Pavilhao 1">Pavilhão 1</option>
             <option value="Pavilhao 2">Pavilhão 2</option>
             <option value="Pavilhao 3">Pavilhão 3</option>
@@ -156,6 +174,7 @@ function RegistrarPerda({ aoAbrirAviso }) {
       </form>
 
       {mensagem && <p className={erro ? 'mensagem erro' : 'mensagem sucesso'} role="status">{mensagem}</p>}
+      {avisoSalvo && <button type="button" onClick={() => aoAbrirAviso(avisoSalvo)}>Ver meu aviso</button>}
     </section>
   );
 }

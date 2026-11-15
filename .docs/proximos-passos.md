@@ -5,6 +5,25 @@
 Registrar nesta lista cada nova mudança solicitada para o Cadê!?. Aguardar um
 pedido explícito para implementar o conjunto de uma vez.
 
+## Rodada de usabilidade implementada
+
+- Facilitar o registro de perda da Lúcia no celular. Ela descreve em uma frase
+  o que perdeu. A IA preenche os campos identificados, como descrição, categoria,
+  pavilhão e data, e solicita somente os dados obrigatórios que faltarem. A Lúcia
+  revisa e pode corrigir o resumo antes de salvar o aviso.
+- Manter um único campo no cadastro de achado do Rodrigo. A IA identifica
+  características e local a partir da descrição, e o balcão pode corrigir o
+  texto antes de salvar. A triagem automática segue após o registro.
+- Quando a descrição da Lúcia ou do Rodrigo for genérica, sugerir um detalhe
+  que ajude a reconhecer o objeto, como marca, risco, adesivo ou acessório.
+  O detalhe é opcional e o registro pode seguir sem preenchê-lo.
+- A situação continua disponível em **Meus avisos**. A proposta dispensa e-mails
+  sobre a situação do objeto. A confirmação de e-mail do cadastro segue separada.
+- O formulário de perda guarda um rascunho por conta no navegador. A lista
+  prioriza os objetos prontos para retirada e mostra o botão **Ver código** no cartão.
+- O balcão busca por número ou descrição e pode informar o local de guarda
+  depois de registrar o achado. Na entrega, o local aparece junto da etiqueta.
+
 ## Rodada autorizada
 
 - Categorias, triagem assistida, fila do balcão, etiquetas, conferência de

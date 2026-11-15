@@ -8,8 +8,8 @@ from rotas.autenticacao import GRUPO_ADMIN, GRUPO_EQUIPE, GRUPO_VISITANTE, exigi
 from seguranca import gerar_codigo_retirada
 from servicos.aviso import buscar_aviso, cancelar_aviso, confirmar_triagem, criar_aviso as criar_aviso_servico, listar_avisos, registrar_objeto_no_balcao, triar_objeto, vincular_visitante
 from servicos.usuario import obter_usuario_atual
-from esquemas.aviso import DescricaoObjeto, ObjetoBalcaoCriar
-from servicos.aviso import corrigir_vinculo, possiveis_duplicados
+from esquemas.aviso import DescricaoObjeto, LocalGuarda, ObjetoBalcaoCriar
+from servicos.aviso import atualizar_local_guarda, corrigir_vinculo, possiveis_duplicados
 
 # O router reúne os caminhos que o visitante e o balcão já utilizam.
 router = APIRouter(prefix="/avisos", tags=["avisos"])
@@ -21,11 +21,12 @@ def listar_avisos_rotas(
     pavilhao: str | None = Query(default=None, description="Filtra por pavilhão"),
     pagina: int = Query(default=1, ge=1, description="Página de dez avisos"),
     pendencia: Literal["triagem", "retirada"] | None = None,
+    busca: str | None = Query(default=None, max_length=100),
     usuario=Depends(obter_usuario_atual),
     sessao=Depends(obter_sessao),
 ):
     dono_id = usuario.id if usuario.tipo == GRUPO_VISITANTE else None
-    return listar_avisos(sessao, pavilhao, dono_id, pagina, pendencia if dono_id is None else None)
+    return listar_avisos(sessao, pavilhao, dono_id, pagina, pendencia, busca)
 
 
 @router.post("/possiveis-duplicados", response_model=list[AvisoSaida])
@@ -149,6 +150,16 @@ def resposta_da_correcao(aviso):
         raise HTTPException(status_code=409, detail=aviso)
     return aviso
 
+
+
+# Só a equipe edita a localização física do objeto em guarda.
+@router.patch("/{aviso_id}/local-guarda", response_model=AvisoSaida)
+def alterar_local_guarda(
+    aviso_id: int, dados: LocalGuarda,
+    usuario=Depends(exigir_grupo(GRUPO_EQUIPE, GRUPO_ADMIN)),
+    sessao=Depends(obter_sessao),
+):
+    return resposta_da_correcao(atualizar_local_guarda(sessao, aviso_id, dados.local_guarda))
 
 
 @router.post("/{aviso_id}/corrigir-vinculo", response_model=AvisoSaida)

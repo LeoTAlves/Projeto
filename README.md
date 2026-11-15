@@ -129,7 +129,7 @@ antes de publicar o backend atualizado. A revisão `9ab64c2f018e` permite que
 2. Em **A ocorrência**, selecione o aviso. Após conferir a descrição e os detalhes
    com a pessoa, vincule o aviso à conta de visitante dela.
 3. Com o achado vinculado, o visitante abre **Meus avisos** e clica em
-   **Mostrar código** para consultar os seis dígitos.
+   **Ver código** no cartão em **Prontos para retirada** para consultar os seis dígitos.
 4. No balcão, selecione **Entregar objeto**, digite o código e confirme a devolução.
    Código incorreto ou ausente mantém o aviso aguardando retirada. O código deixa
    de ser consultável e reutilizável após a devolução.

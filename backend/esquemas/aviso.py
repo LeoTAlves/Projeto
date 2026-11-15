@@ -61,6 +61,11 @@ class CodigoRetirada(BaseModel):
     codigo: str = Field(pattern=r"^[0-9]{6}$")
 
 
+# A equipe pode informar ou limpar o local após salvar o achado.
+class LocalGuarda(BaseModel):
+    local_guarda: Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)]
+
+
 class CorrespondenciaTriagem(AvisoSaida):
     termos_em_comum: list[str]
 

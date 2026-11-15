@@ -101,6 +101,7 @@ export async function listarAvisos(filtrosInformados = {}) {
     consulta.append('visitante_id', String(filtrosInformados.visitante_id));
   }
   if (filtrosInformados.pendencia) consulta.set('pendencia', filtrosInformados.pendencia);
+  if (filtrosInformados.busca) consulta.set('busca', filtrosInformados.busca);
 
   const parametros = consulta.toString();
   const endereco = parametros ? URL_DA_API + "/avisos?" + parametros : URL_DA_API + "/avisos";
@@ -111,6 +112,14 @@ export async function listarAvisos(filtrosInformados = {}) {
 // Busca o detalhe que inclui as ocorrências associadas ao aviso.
 export async function buscarAviso(avisoId) {
   return executarRequisicao(URL_DA_API + "/avisos/" + avisoId);
+}
+
+// Atualiza o endereço físico sem criar outra ocorrência.
+export function atualizarLocalGuarda(avisoId, localGuarda) {
+  return executarRequisicao(URL_DA_API + "/avisos/" + avisoId + "/local-guarda", {
+    method: 'PATCH',
+    body: JSON.stringify({ local_guarda: localGuarda }),
+  });
 }
 
 export function confirmarEmail(token) {

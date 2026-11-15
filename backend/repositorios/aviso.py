@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 
 from modelos.aviso import Aviso
 from modelos.ocorrencia import Ocorrencia  # Registra o destino do relationship antes da consulta.
@@ -29,15 +29,21 @@ def bloquear_avisos(sessao, ids):
 
 
 # WHERE, ORDER BY, LIMIT e OFFSET são executados no MySQL, antes de trazer as linhas.
-def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=None):
+def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=None, busca=None):
     consulta = select(Aviso).order_by(Aviso.noite, Aviso.id)
     if pavilhao is not None:
         consulta = consulta.where(Aviso.pavilhao == pavilhao)
     if visitante_id is not None:
         consulta = consulta.where(Aviso.visitante_id == visitante_id)
+        consulta = consulta.order_by(None).order_by(
+            case((Aviso.situacao == "aguardando retirada", 0), else_=1), Aviso.noite, Aviso.id
+        )
+    if busca:
+        for termo in busca.casefold().split():
+            consulta = consulta.where(func.lower(Aviso.descricao).contains(termo, autoescape=True))
     if pendencia:
         consulta = consulta.where(Aviso.situacao == "aguardando retirada")
-        if pendencia == "triagem":
+        if pendencia == "triagem" and visitante_id is None:
             consulta = consulta.where(Aviso.visitante_id.is_(None))
         else:
             consulta = consulta.where(Aviso.visitante_id.is_not(None))

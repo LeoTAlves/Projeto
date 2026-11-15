@@ -5,6 +5,7 @@ import EtiquetaObjeto from '../../../componentes/EtiquetaObjeto';
 import Triagem from '../balcao/Triagem';
 import VincularDono from './VincularDono';
 import CorrigirVinculo from './CorrigirVinculo';
+import LocalGuarda from './LocalGuarda';
 
 // O aviso já vem escolhido da fila. Sua situação determina a ação do atendimento.
 export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
@@ -112,13 +113,16 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
                 aviso.noite && aviso.noite.split('-').reverse().join('/'),
                 aviso.visitante_id != null && 'Visitante #' + aviso.visitante_id].filter(Boolean).join(' · ')}
             </p>
-            {aviso.local_guarda && <p><strong>Local de guarda</strong> {aviso.local_guarda}</p>}
+            {aviso.situacao !== 'aguardando retirada' && aviso.local_guarda && (
+              <p><strong>Local de guarda</strong> {aviso.local_guarda}</p>
+            )}
             {aviso.recebido_por && <small>Recebido por {aviso.recebido_por}</small>}
             {aviso.situacao_desde && (
               <small>Nesta situação desde {new Date(aviso.situacao_desde).toLocaleString('pt-BR')}</small>
             )}
           </div>
 
+          {aviso.situacao === 'aguardando retirada' && <LocalGuarda aviso={aviso} aoAtualizar={atualizarAviso} />}
           {semVisitante && <Triagem aviso={aviso} aoRegistrar={concluirTriagem} />}
           {avisosTriados.length > 0 && (
             <div className="painel-retirada">
