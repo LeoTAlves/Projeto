@@ -246,8 +246,7 @@ textarea { resize: vertical; line-height: 1.6; }
 }
 [data-tema="escuro"] .card,
 [data-tema="escuro"] .cartao,
-[data-tema="escuro"] .lista-avisos li,
-[data-tema="escuro"] .lista-ocorrencias li {
+[data-tema="escuro"] :where(.lista-avisos, .lista-ocorrencias) > li {
   background: var(--surface);
   border-color: var(--border-card);
 }
@@ -354,17 +353,18 @@ textarea { resize: vertical; line-height: 1.6; }
   --superficie-opcoes: var(--surface-2);
   --nav-ativa: var(--accent);
   --nav-texto: var(--bg);
-  --procurando-fundo: #523704;
+  --procurando-fundo: #674500;
   --procurando-faixa: var(--warn);
-  --retirada-fundo: #103b72;
+  --retirada-fundo: #174a93;
   --retirada-faixa: var(--info);
-  --devolvido-fundo: #123f30;
+  --devolvido-fundo: #12573c;
   --devolvido-faixa: var(--ok);
-  --encerrado-fundo: #482766;
+  --encerrado-fundo: #613590;
   --encerrado-faixa: var(--fix);
-  --cancelado-fundo: #592337;
+  --cancelado-fundo: #752b45;
   --cancelado-faixa: var(--danger);
   --selecao-aviso: var(--accent);
+  --texto-cartao-situacao: #dbe6f6;
 }
 body { font-size: 1.0625rem; }
 .texto-apoio, .formulario label, .cartao label, input, select, textarea { font-size: 1rem; }
@@ -413,20 +413,18 @@ body { font-size: 1.0625rem; }
   box-shadow: none;
 }
 
-/* A faixa mantém a cor da situação mesmo quando o cartão recebe o contorno de seleção. */
-[data-tema="escuro"] .lista-avisos > li[data-situacao],
-[data-tema="escuro"] .lista-ocorrencias > li:has(> .etiqueta) {
-  background: var(--fundo-situacao, var(--encerrado-fundo));
-  border-color: var(--border-card);
-  border-inline-start-color: var(--faixa-situacao, var(--encerrado-faixa));
-}
+/* No escuro, a cor do cartão fica visível inclusive ao passar o cursor sobre o aviso. */
 [data-tema="escuro"] .lista-avisos > li[data-situacao] .botao-aviso:hover:not(:disabled) {
   background: transparent;
+}
+[data-tema="escuro"] :where(.lista-avisos > li[data-situacao], .lista-ocorrencias > li) .etiqueta {
+  /* A cor da etiqueta usa uma base escura para manter o contraste sobre o cartão colorido. */
+  background-color: color-mix(in srgb, var(--surface) 84%, currentColor);
 }
 [data-tema="escuro"] .lista-avisos > li .aviso-numero,
 [data-tema="escuro"] .lista-avisos > li .aviso-metadados,
 [data-tema="escuro"] .lista-avisos .botao-aviso > span:not(.etiqueta):not(.aviso-numero) {
-  color: var(--text-2);
+  color: var(--texto-cartao-situacao);
 }
-[data-tema="escuro"] .lista-ocorrencias small { color: var(--text-2); }
+[data-tema="escuro"] .lista-ocorrencias small { color: var(--texto-cartao-situacao); }
 [data-tema="escuro"] .atendimento-resumo small { color: var(--text-3); }
