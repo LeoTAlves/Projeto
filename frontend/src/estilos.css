@@ -104,6 +104,8 @@ textarea { resize: vertical; line-height: 1.6; }
 .etiqueta-retirada { background: #eaf2ff; color: #24508c; border-color: #c7daf4; }
 .etiqueta-devolvido { background: #e8f5ec; color: #226441; border-color: #bfe0ca; }
 .etiqueta-neutra { background: #f0f2f4; color: #526371; border-color: #dce1e5; }
+.etiqueta-corrigido { background: #f1eaff; color: #573296; border-color: #bba6df; }
+.etiqueta-cancelado { background: #fff0f0; color: #9b293c; border-color: #dba1a9; }
 .legenda-situacoes { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 1.5rem; }
 .legenda-situacoes .etiqueta { font-size: 0.68rem; }
 .situacao-atual, .tipo-ocorrencia { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; border: 1px solid var(--borda); background: #f8faf9; border-radius: 12px; margin: 0; font-size: 0.85rem; }
@@ -221,43 +223,61 @@ textarea { resize: vertical; line-height: 1.6; }
 /* Mantém textos, controles e etiquetas legíveis sobre superfícies escuras. */
 :root[data-tema="escuro"] {
   color-scheme: dark;
-  color: #f0f5fa;
-  background: #0e1826;
-  --azul: #f0f5fa;
-  --borda: #40526a;
-  --apoio: #bdcbd9;
+  --bg: #0b1220;
+  --surface: #131c2e;
+  --surface-2: #1a2540;
+  --border: #2a3753;
+  --border-card: #405273;
+  --border-controle: #627698;
+  --text: #f1f5f9;
+  --text-2: #a8b3c7;
+  --text-3: #8a96ad;
+  --accent: #7c9cff;
+  --ok: #6ee7b7;
+  --warn: #fbbf24;
+  --info: #93c5fd;
+  --fix: #c4b5fd;
+  --danger: #fca5a5;
+  --azul: var(--text);
+  --borda: var(--border);
+  --apoio: var(--text-2);
+  color: var(--text);
+  background: var(--bg);
 }
 [data-tema="escuro"] .card,
 [data-tema="escuro"] .cartao,
 [data-tema="escuro"] .lista-avisos li,
-[data-tema="escuro"] .lista-ocorrencias li { background: #1b293b; }
+[data-tema="escuro"] .lista-ocorrencias li {
+  background: var(--surface);
+  border-color: var(--border-card);
+}
 [data-tema="escuro"] .pagina-acesso > .card-acesso { background: transparent; }
-[data-tema="escuro"] .apresentacao { background: #243b54; }
-[data-tema="escuro"] .marca-simbolo { color: #172c40; }
+[data-tema="escuro"] .apresentacao { background: var(--surface-2); color: var(--text); }
+[data-tema="escuro"] .apresentacao-rodape strong { color: var(--text); }
 [data-tema="escuro"] .marca-pontuacao,
-[data-tema="escuro"] .boas-vindas .sobretitulo { color: #efba4b; }
-[data-tema="escuro"] button { background: #efba4b; color: #172c40; }
-[data-tema="escuro"] button:hover:not(:disabled) { background: #f7ce73; }
+[data-tema="escuro"] .boas-vindas .sobretitulo,
+[data-tema="escuro"] .apresentacao h1 span { color: var(--accent); }
+[data-tema="escuro"] .marca-simbolo,
+[data-tema="escuro"] button { background: var(--accent); color: var(--bg); }
+[data-tema="escuro"] button:hover:not(:disabled) { background: var(--info); }
 [data-tema="escuro"] .botao-secundario,
 [data-tema="escuro"] .navegacao,
 [data-tema="escuro"] .paginacao button,
 [data-tema="escuro"] .situacao-atual,
 [data-tema="escuro"] input,
 [data-tema="escuro"] select,
-[data-tema="escuro"] textarea { background: #243449; color: #f0f5fa; border-color: var(--borda); }
+[data-tema="escuro"] textarea { background: var(--surface-2); color: var(--text); border-color: var(--border-controle); }
 [data-tema="escuro"] input::placeholder,
-[data-tema="escuro"] textarea::placeholder { color: #afbed0; }
+[data-tema="escuro"] textarea::placeholder { color: var(--text-2); }
 [data-tema="escuro"] .botao-secundario:hover:not(:disabled),
-[data-tema="escuro"] .paginacao button:hover:not(:disabled) { background: #354b65; }
+[data-tema="escuro"] .paginacao button:hover:not(:disabled) { background: var(--surface); }
 [data-tema="escuro"] .botao-link,
 [data-tema="escuro"] .botao-aviso,
-[data-tema="escuro"] .navegacao button { background: transparent; color: #f0f5fa; }
+[data-tema="escuro"] .navegacao button { background: transparent; color: var(--text); }
 [data-tema="escuro"] .botao-link:hover:not(:disabled),
 [data-tema="escuro"] .botao-aviso:hover:not(:disabled),
-[data-tema="escuro"] .navegacao button:hover:not(:disabled) { background: #354b65; }
-[data-tema="escuro"] .navegacao button.ativo { background: #405875; border-color: #7890aa; }
-[data-tema="escuro"] .avatar { background: #354b65; }
-[data-tema="escuro"] .lista-avisos li.selecionado { background: #363225; border-color: #c69c4e; }
+[data-tema="escuro"] .navegacao button:hover:not(:disabled) { background: var(--surface); }
+[data-tema="escuro"] .avatar { background: var(--surface-2); }
 
 /* A fila e os formulários do balcão ocupam menos espaço sem reduzir os alvos de toque. */
 .titulo-balcao { font-size: clamp(1.4rem, 3vw, 2rem); margin: 1.5rem 0 1rem; }
@@ -289,15 +309,27 @@ textarea { resize: vertical; line-height: 1.6; }
 @media (max-width: 700px) {
   .filtros-atendimento { grid-template-columns: minmax(0, 1fr); }
 }
-[data-tema="escuro"] .etiqueta-procurando { background: #473517; color: #ffda82; border-color: #8b6a34; }
-[data-tema="escuro"] .etiqueta-retirada { background: #213c5f; color: #c5deff; border-color: #5278a3; }
-[data-tema="escuro"] .etiqueta-devolvido { background: #214537; color: #bcebd0; border-color: #57856f; }
-[data-tema="escuro"] .etiqueta-neutra { background: #304256; color: #d4e1ef; border-color: #647c95; }
-[data-tema="escuro"] .mensagem { background: #243449; color: #e2efff; border-color: var(--borda); }
-[data-tema="escuro"] .erro { color: #ffc4c4; }
-[data-tema="escuro"] .mensagem.erro { background: #442b37; border-color: #83515c; }
-[data-tema="escuro"] .mensagem.sucesso { background: #214537; color: #bcebd0; border-color: #57856f; }
-[data-tema="escuro"] :focus-visible { outline-color: #efba4b; }
+[data-tema="escuro"] .etiqueta-procurando {
+  color: var(--warn); background: rgba(251, 191, 36, .14); border-color: rgba(251, 191, 36, .45);
+}
+[data-tema="escuro"] .etiqueta-retirada {
+  color: var(--info); background: rgba(96, 165, 250, .15); border-color: rgba(96, 165, 250, .40);
+}
+[data-tema="escuro"] .etiqueta-devolvido,
+[data-tema="escuro"] .mensagem.sucesso {
+  color: var(--ok); background: rgba(52, 211, 153, .14); border-color: rgba(52, 211, 153, .40);
+}
+[data-tema="escuro"] .etiqueta-corrigido {
+  color: var(--fix); background: rgba(167, 139, 250, .15); border-color: rgba(167, 139, 250, .40);
+}
+[data-tema="escuro"] .etiqueta-cancelado,
+[data-tema="escuro"] .mensagem.erro {
+  color: var(--danger); background: rgba(248, 113, 113, .14); border-color: rgba(248, 113, 113, .40);
+}
+[data-tema="escuro"] .etiqueta-neutra { color: var(--text-2); background: var(--surface-2); border-color: var(--border); }
+[data-tema="escuro"] .mensagem { background-color: var(--surface-2); color: var(--text); border-color: var(--border); }
+[data-tema="escuro"] .erro { color: var(--danger); }
+[data-tema="escuro"] :focus-visible { outline-color: var(--accent); }
 
 /* A hierarquia de cores acompanha os dois temas, com texto e símbolos junto às situações. */
 :root {
@@ -315,18 +347,10 @@ textarea { resize: vertical; line-height: 1.6; }
   --encerrado-faixa: #7137b8;
 }
 :root[data-tema="escuro"] {
-  --superficie-busca: #073a51;
-  --superficie-opcoes: #39225a;
-  --nav-ativa: #c9a4ff;
-  --nav-texto: #221038;
-  --procurando-fundo: #442c09;
-  --procurando-faixa: #ffbd38;
-  --retirada-fundo: #0b3260;
-  --retirada-faixa: #58b8ff;
-  --devolvido-fundo: #0c3c2e;
-  --devolvido-faixa: #45e79c;
-  --encerrado-fundo: #3b2455;
-  --encerrado-faixa: #c98aff;
+  --superficie-busca: var(--surface-2);
+  --superficie-opcoes: var(--surface-2);
+  --nav-ativa: var(--accent);
+  --nav-texto: var(--bg);
 }
 body { font-size: 1.0625rem; }
 .texto-apoio, .formulario label, .cartao label, input, select, textarea { font-size: 1rem; }
@@ -366,3 +390,22 @@ body { font-size: 1.0625rem; }
   outline: 2px solid var(--faixa-situacao, var(--encerrado-faixa));
   box-shadow: none;
 }
+
+/* No escuro, a seleção é independente da situação do aviso. */
+[data-tema="escuro"] .lista-avisos > li[data-situacao] {
+  background: var(--surface);
+  border-color: var(--border-card);
+}
+[data-tema="escuro"] .lista-avisos > li.selecionado {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  outline-color: var(--accent);
+  box-shadow: none;
+}
+[data-tema="escuro"] .lista-avisos > li .aviso-numero,
+[data-tema="escuro"] .lista-avisos > li .aviso-metadados,
+[data-tema="escuro"] .lista-avisos .botao-aviso > span:not(.etiqueta):not(.aviso-numero) {
+  color: var(--text-2);
+}
+[data-tema="escuro"] .lista-ocorrencias small,
+[data-tema="escuro"] .atendimento-resumo small { color: var(--text-3); }

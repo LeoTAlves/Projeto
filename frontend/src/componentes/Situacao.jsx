@@ -5,9 +5,9 @@ function Situacao({ valor }) {
     'aguardando retirada': { classe: 'retirada', texto: 'Aguardando retirada', simbolo: '↗' },
     devolvido: { classe: 'devolvido', texto: 'Devolvido', simbolo: '✓' },
     triado: { classe: 'neutra', texto: 'Triado', simbolo: '✓' },
-    cancelado: { classe: 'neutra', texto: 'Cancelado', simbolo: '×' },
+    cancelado: { classe: 'cancelado', texto: 'Cancelado', simbolo: '×' },
     'retirada aprovada': { classe: 'retirada', texto: 'Retirada aprovada', simbolo: '✓' },
-    'vinculo corrigido': { classe: 'neutra', texto: 'Vínculo corrigido', simbolo: '↺' },
+    'vinculo corrigido': { classe: 'corrigido', texto: 'Vínculo corrigido', simbolo: '↺' },
     'objeto achado': { classe: 'retirada', texto: 'Objeto achado', simbolo: '↗' },
     devolucao: { classe: 'devolvido', texto: 'Devolução', simbolo: '✓' },
   };
