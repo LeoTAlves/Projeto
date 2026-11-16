@@ -1,4 +1,5 @@
-from sqlalchemy import case, func, select
+from sqlalchemy import case, func, or_, select
+from sqlalchemy.orm import aliased
 
 from modelos.aviso import Aviso
 from modelos.ocorrencia import Ocorrencia  # Registra o destino do relationship antes da consulta.
@@ -31,6 +32,11 @@ def bloquear_avisos(sessao, ids):
 # WHERE, ORDER BY, LIMIT e OFFSET são executados no MySQL, antes de trazer as linhas.
 def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=None, busca=None):
     consulta = select(Aviso).order_by(Aviso.noite, Aviso.id)
+    origem = aliased(Aviso)
+    if visitante_id is None:
+        # O achado triado fica no histórico; seu aviso de perda é o atendimento operacional.
+        consulta = consulta.outerjoin(origem, origem.id == Aviso.origem_achado_id)
+        consulta = consulta.where(Aviso.situacao != "triado")
     if pavilhao is not None:
         consulta = consulta.where(Aviso.pavilhao == pavilhao)
     if visitante_id is not None:
@@ -40,7 +46,10 @@ def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=
         )
     if busca:
         for termo in busca.casefold().split():
-            consulta = consulta.where(func.lower(Aviso.descricao).contains(termo, autoescape=True))
+            filtro = func.lower(Aviso.descricao).contains(termo, autoescape=True)
+            if visitante_id is None:
+                filtro = or_(filtro, func.lower(origem.descricao).contains(termo, autoescape=True))
+            consulta = consulta.where(filtro)
     if pendencia:
         consulta = consulta.where(Aviso.situacao == "aguardando retirada")
         if pendencia == "triagem" and visitante_id is None:
@@ -49,6 +58,12 @@ def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=
             consulta = consulta.where(Aviso.visitante_id.is_not(None))
         consulta = consulta.order_by(None).order_by(Aviso.situacao_desde, Aviso.id)
     consulta = consulta.limit(10).offset((pagina - 1) * 10)
+    return sessao.scalars(consulta).all()
+
+
+# Uma etiqueta de origem pode apontar para vários itens em uma triagem de lote.
+def avisos_da_etiqueta(sessao, aviso_id):
+    consulta = select(Aviso).where(Aviso.origem_achado_id == aviso_id).order_by(Aviso.id)
     return sessao.scalars(consulta).all()
 
 

@@ -101,7 +101,8 @@ export default function Balcao({ avisoInicial }) {
           {avisos.map((aviso) => (
             <li key={aviso.id} data-situacao={aviso.situacao}>
               <div className="aviso-topo">
-                <span className="aviso-numero">Aviso #{aviso.id}</span>
+                <span className="aviso-numero">Aviso #{aviso.id}{aviso.origem_achado_id
+                  && ' · Etiqueta de origem #' + aviso.origem_achado_id}</span>
                 <Situacao valor={aviso.situacao} />
               </div>
               <strong>{aviso.descricao}</strong>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { registrarObjetoBalcao } from '../../../servicos/api';
-import { analisarDescricao, contextoDaDescricao, descricaoGenerica } from '../../../servicos/descricaoObjeto';
+import { analisarDescricao, contextoDaDescricao } from '../../../servicos/descricaoObjeto';
+import DetalhesDoObjeto from '../../../componentes/DetalhesDoObjeto';
 
 // O balcão cadastra o achado em um único campo e pode ir direto à triagem.
 export default function RegistrarAchado({ aoAbrirAviso }) {
@@ -9,6 +10,12 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
   const [erro, setErro] = useState('');
   const [analise, setAnalise] = useState(null);
   const [analisando, setAnalisando] = useState(false);
+
+  // Os atributos correspondem à descrição que foi analisada.
+  function atualizarDescricao(texto) {
+    setDescricao(texto);
+    setAnalise(null);
+  }
 
   // A prévia usa a mesma descrição que a equipe pode corrigir antes do registro.
   async function analisar() {
@@ -45,17 +52,16 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
   return (
     <section className="cartao">
       <h2 className="titulo-atendimento">Registrar objeto encontrado</h2>
-      <form className="formulario" onSubmit={registrar}>
+      <form onSubmit={registrar}>
+        <fieldset className="formulario cadastro-equipe" disabled={salvando || analisando}>
         <label>
           Descrição do objeto
           <textarea required minLength={3} maxLength={200} rows={4}
             value={descricao} disabled={salvando || analisando}
             placeholder="Ex. Mochila preta com zíper vermelho"
-            onChange={(evento) => { setDescricao(evento.target.value); setAnalise(null); }} />
+            onChange={(evento) => atualizarDescricao(evento.target.value)} />
         </label>
-        {descricaoGenerica(descricao) && (
-          <small>Se houver, inclua uma marca, risco, adesivo ou acessório à descrição.</small>
-        )}
+        <DetalhesDoObjeto descricao={descricao} categoria={analise?.categoria} aoAcrescentar={atualizarDescricao} />
         {analise && (
           <p role="status">{[analise.categoria, analise.cor, analise.marca,
             analise.pavilhao?.replace('Pavilhao', 'Pavilhão'), analise.noite?.split('-').reverse().join('/')]
@@ -68,6 +74,7 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
         <button type="submit" disabled={salvando || analisando || descricao.trim().length < 3}>
           {salvando ? 'Salvando...' : 'Registrar objeto'}
         </button>
+        </fieldset>
       </form>
       {erro && <p className="mensagem erro" role="alert">{erro}</p>}
     </section>

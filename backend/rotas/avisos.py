@@ -9,6 +9,7 @@ from seguranca import gerar_codigo_retirada
 from servicos.aviso import buscar_aviso, cancelar_aviso, confirmar_triagem, criar_aviso as criar_aviso_servico, listar_avisos, registrar_objeto_no_balcao, triar_objeto, vincular_visitante
 from servicos.usuario import obter_usuario_atual
 from esquemas.aviso import DescricaoObjeto, LocalGuarda, ObjetoBalcaoCriar
+from repositorios.aviso import avisos_da_etiqueta
 from servicos.aviso import atualizar_local_guarda, corrigir_vinculo, possiveis_duplicados
 
 # O router reúne os caminhos que o visitante e o balcão já utilizam.
@@ -49,6 +50,15 @@ def mostrar_aviso(
     aviso = buscar_aviso(sessao, aviso_id, dono_id)
     if aviso is None:
         raise HTTPException(status_code=404, detail="Aviso não encontrado.")
+    if dono_id is None and aviso.situacao == "triado":
+        vinculados = avisos_da_etiqueta(sessao, aviso_id)
+        if len(vinculados) == 1:
+            return vinculados[0]
+        return AvisoDetalhe.model_validate(aviso, from_attributes=True).model_copy(
+            update={"atendimentos_vinculados": [
+                AvisoSaida.model_validate(vinculado, from_attributes=True) for vinculado in vinculados
+            ]}
+        )
     return aviso
 
 

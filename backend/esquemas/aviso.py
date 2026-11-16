@@ -51,6 +51,7 @@ class AvisoSaida(AtributosObjeto):
 # O detalhe agrega ocorrências já definidas no esquema do próprio recurso de ocorrências.
 class AvisoDetalhe(AvisoSaida):
     ocorrencias: list[OcorrenciaSaida] = Field(default_factory=list)
+    atendimentos_vinculados: list[AvisoSaida] = Field(default_factory=list)
 
 
 class VinculoVisitante(BaseModel):

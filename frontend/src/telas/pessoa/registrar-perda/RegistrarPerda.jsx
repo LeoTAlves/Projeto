@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { buscarDuplicados, criarAviso } from '../../../servicos/api';
-import { analisarDescricao, contextoDaDescricao, descricaoGenerica } from '../../../servicos/descricaoObjeto';
+import { analisarDescricao, contextoDaDescricao } from '../../../servicos/descricaoObjeto';
+import DetalhesDoObjeto from '../../../componentes/DetalhesDoObjeto';
 
 const categorias = [
   'Celulares e eletrônicos', 'Carteiras e documentos', 'Chaves', 'Óculos',
@@ -27,6 +28,14 @@ function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
   const [assistencia, setAssistencia] = useState('');
   const [consultandoIA, setConsultandoIA] = useState(false);
   const [avisoSalvo, setAvisoSalvo] = useState(null);
+
+  // Uma descrição nova precisa de nova verificação de possíveis duplicidades.
+  function atualizarDescricao(texto) {
+    setDescricao(texto);
+    setDuplicados([]);
+    setAssistencia('');
+    setAvisoSalvo(null);
+  }
 
   // Guarda as edições e remove o rascunho quando o formulário é limpo após o envio.
   useEffect(() => {
@@ -113,7 +122,7 @@ function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
             minLength="3"
             maxLength="200"
             value={descricao}
-            onChange={(evento) => { setDescricao(evento.target.value); setDuplicados([]); setAssistencia(''); setAvisoSalvo(null); }}
+            onChange={(evento) => atualizarDescricao(evento.target.value)}
             rows="4"
             placeholder="Ex. Perdi meus óculos pretos no pavilhão 2 ontem à noite"
           />
@@ -121,9 +130,7 @@ function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
         <button type="button" className="botao-secundario" disabled={descricao.trim().length < 3}
           onClick={sugerir}>{consultandoIA ? 'Analisando descrição...' : 'Preencher com ajuda da IA'}</button>
         {assistencia && <p role="status">{assistencia}</p>}
-        {descricaoGenerica(descricao) && (
-          <small>Se souber, acrescente uma marca, risco, adesivo ou acessório à descrição.</small>
-        )}
+        <DetalhesDoObjeto descricao={descricao} categoria={categoria} aoAcrescentar={atualizarDescricao} />
         <label>
           Categoria
           <select value={categoria} onChange={(evento) => setCategoria(evento.target.value)}>

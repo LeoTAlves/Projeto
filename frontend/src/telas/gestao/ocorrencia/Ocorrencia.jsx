@@ -23,10 +23,14 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
   useEffect(() => {
     let ativa = true;
     buscarAviso(avisoId)
-      .then((resultado) => { if (ativa) setAviso(resultado); })
+      .then((resultado) => {
+        if (!ativa) return;
+        if (resultado.id !== avisoId) aoAbrirAviso(resultado.id);
+        else setAviso(resultado);
+      })
       .catch((falha) => { if (ativa) setErroConsulta(falha.message); });
     return () => { ativa = false; };
-  }, [avisoId, tentativa]);
+  }, [avisoId, tentativa, aoAbrirAviso]);
 
   // Leva o foco ao objeto uma vez, sem interromper o preenchimento dos campos.
   useEffect(() => {
@@ -58,7 +62,7 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
     setErro('');
     setMensagem('');
     try {
-      const ocorrencia = await criarOcorrencia(avisoId, {
+      const ocorrencia = await criarOcorrencia(aviso.id, {
         tipo: devolucao ? 'devolucao' : 'objeto achado',
         descricao: descricao || 'Objeto entregue ao visitante.',
         codigo_retirada: devolucao ? campos.get('codigo') : undefined,
@@ -87,7 +91,7 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
         <button type="button" className="botao-secundario" disabled={enviando} onClick={aoVoltar}>
           ← Voltar aos atendimentos
         </button>
-        <span className="aviso-numero">Aviso #{avisoId}</span>
+        <span className="aviso-numero">Aviso #{aviso?.id ?? avisoId}</span>
       </div>
       {erro && <p className="mensagem erro" role="alert">{erro}</p>}
       {mensagem && <p className="mensagem sucesso" role="status">{mensagem}</p>}
@@ -122,6 +126,17 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
             )}
           </div>
 
+          {aviso.atendimentos_vinculados?.length > 1 && (
+            <div className="painel-retirada">
+              <strong>Esta etiqueta pertence a um lote. Abra o atendimento do item correto.</strong>
+              {aviso.atendimentos_vinculados.map((vinculado) => (
+                <button key={vinculado.id} type="button" className="botao-secundario"
+                  onClick={() => aoAbrirAviso(vinculado.id)}>
+                  #{vinculado.id} · {vinculado.descricao} · <Situacao valor={vinculado.situacao} />
+                </button>
+              ))}
+            </div>
+          )}
           {aviso.situacao === 'aguardando retirada' && <LocalGuarda aviso={aviso} aoAtualizar={atualizarAviso} />}
           {semVisitante && <Triagem aviso={aviso} aoRegistrar={concluirTriagem} />}
           {avisosTriados.length > 0 && (

@@ -27,6 +27,7 @@ export default function LocalGuarda({ aviso, aoAtualizar }) {
   return (
     <div className="painel-retirada">
       <strong>Guarda do objeto · Etiqueta #{aviso.id}</strong>
+      {aviso.origem_achado_id && <small>Etiqueta de origem #{aviso.origem_achado_id}</small>}
       <p>{aviso.local_guarda || 'Local ainda não informado'}</p>
       {editando ? (
         <form className="formulario" onSubmit={salvar}>
