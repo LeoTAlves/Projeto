@@ -12,7 +12,19 @@ from servicos.aviso import confirmar_triagem, termos_da_descricao
 
 logger = logging.getLogger(__name__)
 CAMPOS = ("categoria", "cor", "marca")
-CONTEXTO = {"perdi", "achei", "encontrei", "recebi", "ontem", "hoje", "noite", "pavilhao"}
+CONTEXTO = {"perdi", "achei", "encontrei", "recebi", "ontem", "hoje", "noite", "pavilhao",
+            "na", "no", "nas", "nos", "de", "da", "do", "das", "dos"}
+PLURAIS = {"detalhes": "detalhe", "alcas": "alca", "ziperes": "ziper", "bolsos": "bolso",
+           "pretos": "preto", "pretas": "preto", "brancos": "branco", "brancas": "branco",
+           "vermelhos": "vermelho", "vermelhas": "vermelho", "azuis": "azul"}
+PARTES = {"alca", "ziper", "bolso"}
+CORES_DE_DETALHE = {"preto", "branco", "azul", "vermelho", "verde", "amarelo", "cinza",
+                    "marrom", "rosa", "roxo", "bege"}
+
+
+# Mantém apenas as características do objeto e aproxima variantes comuns de escrita.
+def normalizar_termo(termo):
+    return normalizar_cor(PLURAIS.get(termo, SINONIMOS.get(termo, termo)))
 
 
 # Preenche atributos ausentes somente para comparar, sem alterar o cadastro.
@@ -20,12 +32,30 @@ def perfil(aviso):
     extras = extrair_atributos(aviso.descricao)
     atributos = {campo: getattr(aviso, campo) or getattr(extras, campo) for campo in CAMPOS}
     descricao = re.sub(r"\b\d{1,2}/\d{1,2}(?:/\d{4})?\b", "", aviso.descricao)
-    termos = {normalizar_cor(SINONIMOS.get(termo, termo))
+    termos = {normalizar_termo(termo)
               for termo in termos_da_descricao(descricao) - CONTEXTO}
     calçado = calcado(aviso.descricao)
     if calçado is not None:
         atributos["cor"] = calçado[0]
+    elif atributos["cor"]:
+        atributos["cor"] = " ".join(sorted(normalizar_termo(termo) for termo in palavras(atributos["cor"])))
+    elif "mochila" in termos:
+        # Em registros antigos, “mochila vermelha” identifica a cor mesmo com detalhes pretos.
+        cor_principal = re.search(r"\bmochila\s+(\w+)\b", descricao.casefold())
+        if cor_principal and normalizar_termo(cor_principal[1]) in CORES_DE_DETALHE:
+            atributos["cor"] = normalizar_termo(cor_principal[1])
     return atributos, termos, calçado
+
+
+# Exige a mesma cor da mochila e dos detalhes, e uma referência à parte do objeto.
+def mochila_compativel(origem, candidato):
+    atributos, termos, _ = origem
+    outros, outros_termos, _ = candidato
+    cor = atributos["cor"]
+    detalhes = (termos & CORES_DE_DETALHE) - {cor}
+    outros_detalhes = (outros_termos & CORES_DE_DETALHE) - {cor}
+    return bool(cor and cor == outros["cor"] and detalhes and detalhes == outros_detalhes
+                and {"mochila", "detalhe"} <= termos & outros_termos and (termos | outros_termos) & PARTES)
 
 
 # Divergências explícitas excluem o par; descrições genéricas exigem mais evidência.
@@ -43,6 +73,15 @@ def compatibilidade(origem, candidato):
         return bool(cor and cor == outra_cor and campos and
                     all(detalhes[campo] == outros_detalhes[campo] for campo in campos)
                     and comuns & {"tenis", "sapato", "sapatos", "chinelo", "chinelos", "bota", "botas", "sandalia", "sandalias"})
+    if "mochila" in comuns:
+        # A perda pode dizer “detalhes pretos” e o achado especificar alça e zíper.
+        cor = atributos["cor"]
+        detalhes = (termos & CORES_DE_DETALHE) - {cor}
+        outros_detalhes = (outros_termos & CORES_DE_DETALHE) - {cor}
+        if detalhes and outros_detalhes and detalhes != outros_detalhes:
+            return False
+        if mochila_compativel(origem, candidato):
+            return True
     cobertura = 2 * len(comuns) / max(1, len(termos) + len(outros_termos))
     # Um relato mais longo pode acrescentar detalhes ao mais curto sem invalidar o par.
     contido = len(preenchidos) >= 2 and len(comuns) == min(len(termos), len(outros_termos))
@@ -67,10 +106,11 @@ def candidato_unico(aviso, candidatos):
 def agente_confirma(sessao, achado, perda):
     if not provedor_configurado():
         return True
-    atributos, _, calcado_achado = perfil(achado)
-    atributos_perda, _, calcado_perda = perfil(perda)
+    perfil_achado, perfil_perda = perfil(achado), perfil(perda)
+    atributos, _, calcado_achado = perfil_achado
+    atributos_perda, _, calcado_perda = perfil_perda
     # A regra compara atributos observáveis, inclusive quando o provedor não reconhece a descrição.
-    if calcado_achado is not None and calcado_perda is not None:
+    if (calcado_achado is not None and calcado_perda is not None) or mochila_compativel(perfil_achado, perfil_perda):
         return True
     dados = SugestaoIACriar(**atributos, caracteristicas_distintivas=achado.descricao)
     candidato = SimpleNamespace(id=perda.id, descricao=perda.descricao, pavilhao=perda.pavilhao,
