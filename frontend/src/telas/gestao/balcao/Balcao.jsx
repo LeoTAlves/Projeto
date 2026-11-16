@@ -103,7 +103,8 @@ export default function Balcao({ avisoInicial }) {
               <div className="aviso-topo">
                 <span className="aviso-numero">Aviso #{aviso.id}{aviso.origem_achado_id
                   && ' · Etiqueta de origem #' + aviso.origem_achado_id}</span>
-                <Situacao valor={aviso.situacao} />
+                <Situacao valor={aviso.situacao === 'aguardando retirada' && aviso.visitante_id == null
+                  ? 'para triar' : aviso.situacao} />
               </div>
               <strong>{aviso.descricao}</strong>
               <span className="aviso-metadados">

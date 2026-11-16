@@ -10,7 +10,9 @@ TIPOS = {
     "Chaves": {"chave", "chaves", "chaveiro"},
     "Óculos": {"oculos"},
     "Bolsas e mochilas": {"bolsa", "mochila", "mala", "pochete"},
-    "Roupas e acessórios": {"camisa", "camiseta", "jaqueta", "bone", "relogio", "casaco"},
+    "Roupas e acessórios": {"camisa", "camiseta", "jaqueta", "bone", "relogio", "casaco", "calca",
+                            "tenis", "sapato", "sapatos", "chinelo", "chinelos", "bota", "botas",
+                            "sandalia", "sandalias"},
 }
 CORES = {
     "preto": {"preto", "preta", "negro", "negra"},

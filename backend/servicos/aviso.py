@@ -120,6 +120,7 @@ def criar_aviso(sessao, dados, usuario):
         return "O aviso de perda deve pertencer a um visitante."
     dados_do_aviso = {
         **dados,
+        "marca": None if dados.get("marca") == "Não identificada" else dados.get("marca"),
         "local_guarda": None,
         "situacao": "procurando",
         "situacao_desde": datetime.now(timezone.utc),
@@ -137,6 +138,7 @@ def registrar_objeto_no_balcao(sessao, dados, usuario):
     # Sem data do achado, o sistema usa a data do registro e deixa o pavilhão como desconhecido.
     achado = repositorio_aviso.criar_aviso(sessao, {
         **dados, "visitante_id": None, "situacao": "aguardando retirada",
+        "marca": None if dados.get("marca") == "Não identificada" else dados.get("marca"),
         "pavilhao": dados.get("pavilhao") or "Não informado",
         "noite": dados.get("noite") or agora.date(),
         "situacao_desde": agora,

@@ -1,7 +1,9 @@
 import logging
+import re
 from types import SimpleNamespace
 
 from ia.comparacao_local import extrair_atributos, palavras, SINONIMOS
+from ia.calcados import calcado, normalizar_cor
 from ia.modelos import ProvedoresIndisponiveis, provedor_configurado
 from ia.sugestao import SugestaoIACriar, sugerir_correspondencias
 from repositorios.aviso import percorrer_achados_disponiveis, percorrer_perdas_abertas
@@ -10,26 +12,43 @@ from servicos.aviso import confirmar_triagem, termos_da_descricao
 
 logger = logging.getLogger(__name__)
 CAMPOS = ("categoria", "cor", "marca")
+CONTEXTO = {"perdi", "achei", "encontrei", "recebi", "ontem", "hoje", "noite", "pavilhao"}
 
 
 # Preenche atributos ausentes somente para comparar, sem alterar o cadastro.
 def perfil(aviso):
     extras = extrair_atributos(aviso.descricao)
     atributos = {campo: getattr(aviso, campo) or getattr(extras, campo) for campo in CAMPOS}
-    termos = {SINONIMOS.get(termo, termo) for termo in termos_da_descricao(aviso.descricao)}
-    return atributos, termos
+    descricao = re.sub(r"\b\d{1,2}/\d{1,2}(?:/\d{4})?\b", "", aviso.descricao)
+    termos = {normalizar_cor(SINONIMOS.get(termo, termo))
+              for termo in termos_da_descricao(descricao) - CONTEXTO}
+    calçado = calcado(aviso.descricao)
+    if calçado is not None:
+        atributos["cor"] = calçado[0]
+    return atributos, termos, calçado
 
 
 # Divergências explícitas excluem o par; descrições genéricas exigem mais evidência.
 def compatibilidade(origem, candidato):
-    atributos, termos = origem
-    outros, outros_termos = candidato
+    atributos, termos, calçado = origem
+    outros, outros_termos, outro_calçado = candidato
     preenchidos = [campo for campo in CAMPOS if atributos[campo] and outros[campo]]
     if any(palavras(atributos[campo]) != palavras(outros[campo]) for campo in preenchidos):
         return False
     comuns = termos & outros_termos
+    if calçado is not None and outro_calçado is not None:
+        cor, detalhes = calçado
+        outra_cor, outros_detalhes = outro_calçado
+        campos = detalhes.keys() & outros_detalhes.keys()
+        return bool(cor and cor == outra_cor and campos and
+                    all(detalhes[campo] == outros_detalhes[campo] for campo in campos)
+                    and comuns & {"tenis", "sapato", "sapatos", "chinelo", "chinelos", "bota", "botas", "sandalia", "sandalias"})
     cobertura = 2 * len(comuns) / max(1, len(termos) + len(outros_termos))
-    return len(comuns) >= 3 and cobertura >= 0.75 and (len(preenchidos) >= 2 or len(comuns) >= 4)
+    # Um relato mais longo pode acrescentar detalhes ao mais curto sem invalidar o par.
+    contido = len(preenchidos) >= 2 and len(comuns) == min(len(termos), len(outros_termos))
+    return len(comuns) >= 3 and (contido or (
+        cobertura >= 0.75 and (len(preenchidos) >= 2 or len(comuns) >= 4)
+    ))
 
 
 # Se houver dois candidatos plausíveis, a entrega permanece pendente.
@@ -48,8 +67,11 @@ def candidato_unico(aviso, candidatos):
 def agente_confirma(sessao, achado, perda):
     if not provedor_configurado():
         return True
-    atributos, _ = perfil(achado)
-    atributos_perda, _ = perfil(perda)
+    atributos, _, calcado_achado = perfil(achado)
+    atributos_perda, _, calcado_perda = perfil(perda)
+    # A regra compara atributos observáveis, inclusive quando o provedor não reconhece a descrição.
+    if calcado_achado is not None and calcado_perda is not None:
+        return True
     dados = SugestaoIACriar(**atributos, caracteristicas_distintivas=achado.descricao)
     candidato = SimpleNamespace(id=perda.id, descricao=perda.descricao, pavilhao=perda.pavilhao,
                                 noite=perda.noite, situacao=perda.situacao, **atributos_perda)

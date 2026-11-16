@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { buscarDuplicados, criarAviso } from '../../../servicos/api';
-import { analisarDescricao, contextoDaDescricao } from '../../../servicos/descricaoObjeto';
+import { analisarDescricao, contextoDaDescricao, perguntasDeCalcado, revisarCampos } from '../../../servicos/descricaoObjeto';
 import DetalhesDoObjeto from '../../../componentes/DetalhesDoObjeto';
 
-const categorias = [
-  'Celulares e eletrônicos', 'Carteiras e documentos', 'Chaves', 'Óculos',
-  'Bolsas e mochilas', 'Roupas e acessórios', 'Outros',
-];
+import CamposDoObjeto from '../../../componentes/CamposDoObjeto';
 
 // O rascunho é separado por conta e continua opcional se o navegador bloquear armazenamento.
 function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
@@ -28,6 +25,8 @@ function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
   const [assistencia, setAssistencia] = useState('');
   const [consultandoIA, setConsultandoIA] = useState(false);
   const [avisoSalvo, setAvisoSalvo] = useState(null);
+  const dados = { categoria, cor, marca, pavilhao, noite };
+  const editores = { categoria: setCategoria, cor: setCor, marca: setMarca, pavilhao: setPavilhao, noite: setNoite };
 
   // Uma descrição nova precisa de nova verificação de possíveis duplicidades.
   function atualizarDescricao(texto) {
@@ -49,6 +48,11 @@ function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
   // O envio usa o visitante escolhido no perfil e mostra claramente sucesso ou falha.
   const enviarFormulario = async (evento) => {
     evento.preventDefault();
+    if (perguntasDeCalcado(descricao)?.length) {
+      setErro(true);
+      setMensagem('Complete os detalhes do calçado indicados no formulário.');
+      return;
+    }
     setCarregando(true);
     setMensagem('');
     setErro(false);
@@ -99,9 +103,7 @@ function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
       setCategoria(categoria || resposta.categoria || '');
       setCor(cor || resposta.cor || '');
       setMarca(marca || resposta.marca || '');
-      const faltam = [!(pavilhao || resposta.pavilhao) && 'pavilhão', !(noite || resposta.noite) && 'data'].filter(Boolean);
-      setAssistencia(faltam.length ? 'Revise os dados e informe ' + faltam.join(' e ') + '.'
-        : 'Revise os campos antes de registrar.');
+      setAssistencia('revisar');
     } catch {
       setAssistencia('A sugestão de atributos está indisponível. Você pode completar ou revisar os campos.');
     } finally {
@@ -129,41 +131,10 @@ function RegistrarPerda({ visitanteId, aoAbrirAviso }) {
         </label>
         <button type="button" className="botao-secundario" disabled={descricao.trim().length < 3}
           onClick={sugerir}>{consultandoIA ? 'Analisando descrição...' : 'Preencher com ajuda da IA'}</button>
-        {assistencia && <p role="status">{assistencia}</p>}
-        <DetalhesDoObjeto descricao={descricao} categoria={categoria} aoAcrescentar={atualizarDescricao} />
-        <label>
-          Categoria
-          <select value={categoria} onChange={(evento) => setCategoria(evento.target.value)}>
-            <option value="">Selecione uma categoria</option>
-            {categorias.map((nome) => <option key={nome}>{nome}</option>)}
-          </select>
-        </label>
-        <div className="formulario">
-          <label>Cor<input maxLength={100} value={cor} onChange={(evento) => setCor(evento.target.value)} /></label>
-          <label>Marca<input maxLength={100} value={marca} onChange={(evento) => setMarca(evento.target.value)} /></label>
-        </div>
-
-        <div className="formulario">
-        <label>
-          Pavilhão
-          <select required value={pavilhao} onChange={(evento) => setPavilhao(evento.target.value)}>
-            <option value="">Selecione o pavilhão</option>
-            <option value="Pavilhao 1">Pavilhão 1</option>
-            <option value="Pavilhao 2">Pavilhão 2</option>
-            <option value="Pavilhao 3">Pavilhão 3</option>
-          </select>
-        </label>
-
-        <label>
-          Noite
-          <input
-            required
-            type="date"
-            value={noite}
-            onChange={(evento) => setNoite(evento.target.value)}
-          />
-        </label>
-        </div>
+        {assistencia && <p role="status">{assistencia === 'revisar' ? revisarCampos(dados) : assistencia}</p>}
+        <DetalhesDoObjeto key={descricao + categoria} descricao={descricao} categoria={categoria}
+          aoAcrescentar={atualizarDescricao} />
+        <CamposDoObjeto dados={dados} aoAlterar={(campo, valor) => editores[campo](valor)} />
 
         {duplicados.length > 0 && (
           <div className="painel-retirada" role="status">

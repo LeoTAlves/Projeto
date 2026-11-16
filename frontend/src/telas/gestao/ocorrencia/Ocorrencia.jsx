@@ -111,7 +111,7 @@ export default function Ocorrencia({ avisoId, aoVoltar, aoAbrirAviso }) {
             <h2 tabIndex={-1} ref={titulo}>
               {aviso.descricao}
             </h2>
-            <Situacao valor={aviso.situacao} />
+            <Situacao valor={semVisitante ? 'para triar' : aviso.situacao} />
             <p className="aviso-metadados">
               {[aviso.categoria, aviso.cor, aviso.marca, aviso.pavilhao,
                 aviso.noite && aviso.noite.split('-').reverse().join('/'),

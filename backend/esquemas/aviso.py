@@ -1,8 +1,9 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from esquemas.ocorrencia import OcorrenciaSaida
+from ia.calcados import calcado
 
 CategoriaObjeto = Literal[
     "Celulares e eletrônicos", "Carteiras e documentos", "Chaves", "Óculos",
@@ -22,16 +23,25 @@ class DescricaoObjeto(BaseModel):
 # Este schema define a entrada do aviso novo para a pessoa visitante, sem senha e sem autenticação.
 class AvisoCriar(AtributosObjeto):
     descricao: str = Field(..., min_length=3, max_length=200)
+    categoria: CategoriaObjeto
+    cor: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    marca: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     pavilhao: Literal["Pavilhao 1", "Pavilhao 2", "Pavilhao 3"]
     noite: date  # Valida uma data real, mantendo AAAA-MM-DD no JSON.
     local_guarda: str | None = Field(default=None, max_length=100)
 
+    @model_validator(mode="after")
+    def validar_detalhes(self):
+        # Também vale para o cadastro do balcão, que herda este esquema.
+        dados = calcado(self.descricao)
+        if dados is not None and not all(dados):
+            raise ValueError("Informe na descrição a cor do calçado e a cor do cadarço ou da sola, o modelo ou o tamanho.")
+        return self
 
-# O balcão pode registrar só a descrição. Clientes anteriores ainda podem enviar os demais dados.
+
+# O balcão usa os mesmos dados mínimos para comparar um achado com a perda.
 class ObjetoBalcaoCriar(AvisoCriar):
     descricao: Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=200)]
-    pavilhao: Literal["Pavilhao 1", "Pavilhao 2", "Pavilhao 3"] | None = None
-    noite: date | None = None
 
 # O schema de saída traz os dados principais do aviso e o estado atual da busca.
 class AvisoSaida(AtributosObjeto):

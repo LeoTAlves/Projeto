@@ -1,31 +1,36 @@
 import { useState } from 'react';
 import { registrarObjetoBalcao } from '../../../servicos/api';
-import { analisarDescricao, contextoDaDescricao } from '../../../servicos/descricaoObjeto';
+import { analisarDescricao, contextoDaDescricao, perguntasDeCalcado, revisarCampos } from '../../../servicos/descricaoObjeto';
 import DetalhesDoObjeto from '../../../componentes/DetalhesDoObjeto';
+import CamposDoObjeto from '../../../componentes/CamposDoObjeto';
 
-// O balcão cadastra o achado em um único campo e pode ir direto à triagem.
+// A descrição inicia o cadastro e o balcão revisa os atributos antes da triagem.
 export default function RegistrarAchado({ aoAbrirAviso }) {
   const [descricao, setDescricao] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
-  const [analise, setAnalise] = useState(null);
+  const [dados, setDados] = useState({ categoria: '', cor: '', marca: '', pavilhao: '', noite: '' });
+  const [revisando, setRevisando] = useState(false);
   const [analisando, setAnalisando] = useState(false);
 
   // Os atributos correspondem à descrição que foi analisada.
   function atualizarDescricao(texto) {
     setDescricao(texto);
-    setAnalise(null);
   }
 
   // A prévia usa a mesma descrição que a equipe pode corrigir antes do registro.
   async function analisar() {
     setAnalisando(true);
     setErro('');
+    let sugestao = contextoDaDescricao(descricao);
     try {
-      setAnalise(await analisarDescricao(descricao));
+      sugestao = await analisarDescricao(descricao);
     } catch {
-      setErro('A análise está indisponível. Você pode salvar pela descrição.');
+      setErro('A sugestão de atributos está indisponível. Complete os campos manualmente.');
     } finally {
+      setDados(Object.fromEntries(Object.entries(dados)
+        .map(([campo, valor]) => [campo, valor || sugestao[campo] || ''])));
+      setRevisando(true);
       setAnalisando(false);
     }
   }
@@ -35,11 +40,15 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
     evento.preventDefault();
     const texto = descricao.trim();
     if (salvando || analisando || texto.length < 3) return;
+    if (perguntasDeCalcado(texto)?.length) {
+      setErro('Complete os detalhes do calçado indicados no formulário.');
+      return;
+    }
     setSalvando(true);
     setErro('');
     try {
       const achado = await registrarObjetoBalcao({
-        ...contextoDaDescricao(texto), ...analise, descricao: texto,
+        ...dados, descricao: texto,
       });
       aoAbrirAviso(achado.aviso_vinculado_id ?? achado.id);
     } catch (falha) {
@@ -61,16 +70,15 @@ export default function RegistrarAchado({ aoAbrirAviso }) {
             placeholder="Ex. Mochila preta com zíper vermelho"
             onChange={(evento) => atualizarDescricao(evento.target.value)} />
         </label>
-        <DetalhesDoObjeto descricao={descricao} categoria={analise?.categoria} aoAcrescentar={atualizarDescricao} />
-        {analise && (
-          <p role="status">{[analise.categoria, analise.cor, analise.marca,
-            analise.pavilhao?.replace('Pavilhao', 'Pavilhão'), analise.noite?.split('-').reverse().join('/')]
-            .filter(Boolean).join(' · ') || 'Nenhum atributo identificado. A descrição pode ser salva.'}</p>
-        )}
+        <DetalhesDoObjeto key={descricao + dados.categoria} descricao={descricao}
+          categoria={dados.categoria} aoAcrescentar={atualizarDescricao} />
         <button type="button" className="botao-secundario" onClick={analisar}
           disabled={salvando || analisando || descricao.trim().length < 3}>
-          {analisando ? 'Analisando...' : 'Identificar detalhes com IA'}
+          {analisando ? 'Analisando...' : 'Preencher com ajuda da IA'}
         </button>
+        {revisando && <p role="status">{revisarCampos(dados)}</p>}
+        <CamposDoObjeto dados={dados} achado
+          aoAlterar={(campo, valor) => setDados((atual) => ({ ...atual, [campo]: valor }))} />
         <button type="submit" disabled={salvando || analisando || descricao.trim().length < 3}>
           {salvando ? 'Salvando...' : 'Registrar objeto'}
         </button>

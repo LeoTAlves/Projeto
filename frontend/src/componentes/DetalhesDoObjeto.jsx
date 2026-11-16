@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { perguntasSobreObjeto } from '../servicos/descricaoObjeto';
+import { perguntasDeCalcado, perguntasSobreObjeto } from '../servicos/descricaoObjeto';
 
 // Faz perguntas sobre características observáveis e acrescenta a resposta à descrição.
 export default function DetalhesDoObjeto({ descricao, categoria, aoAcrescentar }) {
   const [resposta, setResposta] = useState('');
   const perguntas = perguntasSobreObjeto(descricao, categoria);
+  const obrigatorio = perguntasDeCalcado(descricao)?.length > 0;
   const limite = 200 - descricao.trim().length - 2;
   if (!perguntas.length || limite < 3) return null;
 
@@ -18,10 +19,10 @@ export default function DetalhesDoObjeto({ descricao, categoria, aoAcrescentar }
 
   return (
     <div className="painel-retirada">
-      <strong>Ajude a identificar o objeto</strong>
+      <strong>{obrigatorio ? 'Complete os detalhes antes de salvar' : 'Ajude a identificar o objeto'}</strong>
       <ul>{perguntas.map((pergunta) => <li key={pergunta}>{pergunta}</li>)}</ul>
       <label>
-        Detalhe adicional (opcional)
+        Detalhe adicional
         <input value={resposta} maxLength={limite} onChange={(evento) => setResposta(evento.target.value)}
           onKeyDown={(evento) => {
             if (evento.key !== 'Enter' || evento.nativeEvent.isComposing) return;
@@ -33,6 +34,10 @@ export default function DetalhesDoObjeto({ descricao, categoria, aoAcrescentar }
       <button type="button" className="botao-secundario"
         disabled={!resposta.trim() || resposta.trim().length > limite}
         onClick={acrescentar}>Acrescentar à descrição</button>
+      {!obrigatorio && <label className="triagem-selecao">
+        <input type="checkbox" required />
+        Quero registrar com os detalhes disponíveis.
+      </label>}
     </div>
   );
 }
