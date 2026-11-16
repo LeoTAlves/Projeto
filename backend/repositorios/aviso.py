@@ -50,7 +50,15 @@ def listar_avisos(sessao, pavilhao=None, visitante_id=None, pagina=1, pendencia=
             if visitante_id is None:
                 filtro = or_(filtro, func.lower(origem.descricao).contains(termo, autoescape=True))
             consulta = consulta.where(filtro)
-    if pendencia:
+    # As entregas concluídas ficam fora da fila ativa antes de aplicar a paginação.
+    if pendencia == "ativos":
+        consulta = consulta.where(Aviso.situacao != "devolvido")
+    elif pendencia == "devolvidos":
+        consulta = consulta.where(Aviso.situacao == "devolvido").order_by(None).order_by(
+            case((Aviso.situacao_desde.is_(None), 1), else_=0),
+            Aviso.situacao_desde.desc(), Aviso.id.desc(),
+        )
+    elif pendencia in ("triagem", "retirada"):
         consulta = consulta.where(Aviso.situacao == "aguardando retirada")
         if pendencia == "triagem" and visitante_id is None:
             consulta = consulta.where(Aviso.visitante_id.is_(None))

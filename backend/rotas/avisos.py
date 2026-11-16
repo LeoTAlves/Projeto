@@ -21,7 +21,7 @@ router = APIRouter(prefix="/avisos", tags=["avisos"])
 def listar_avisos_rotas(
     pavilhao: str | None = Query(default=None, description="Filtra por pavilhão"),
     pagina: int = Query(default=1, ge=1, description="Página de dez avisos"),
-    pendencia: Literal["triagem", "retirada"] | None = None,
+    pendencia: Literal["ativos", "triagem", "retirada", "devolvidos"] | None = None,
     busca: str | None = Query(default=None, max_length=100),
     usuario=Depends(obter_usuario_atual),
     sessao=Depends(obter_sessao),

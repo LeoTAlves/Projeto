@@ -5,9 +5,10 @@ import Situacao from '../../../componentes/Situacao';
 import Ocorrencia from '../ocorrencia/Ocorrencia';
 
 const filas = [
-  ['', 'Todos os avisos'],
+  ['ativos', 'Fila de trabalho'],
   ['triagem', 'Para triar'],
   ['retirada', 'Prontos para retirada'],
+  ['devolvidos', 'Devolvidos'],
 ];
 
 // O cartão indica a próxima tarefa para que a equipe escolha o aviso em um clique.
@@ -28,7 +29,7 @@ export default function Balcao({ avisoInicial }) {
   const [avisoId, setAvisoId] = useState(avisoInicial || null);
   const [numero, setNumero] = useState('');
   const [busca, setBusca] = useState('');
-  const [pendencia, setPendencia] = useState('');
+  const [pendencia, setPendencia] = useState('ativos');
   const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
@@ -95,7 +96,8 @@ export default function Balcao({ avisoInicial }) {
             onClick={() => setTentativa((atual) => atual + 1)}>Tentar novamente</button>
         </>
       ) : avisos.length === 0 ? (
-        <p>Nenhum aviso para os filtros selecionados.</p>
+        <p>{pendencia === 'devolvidos' ? 'Nenhuma devolução para os filtros selecionados.'
+          : 'Nenhum aviso para os filtros selecionados.'}</p>
       ) : (
         <ul className="lista-avisos lista-balcao">
           {avisos.map((aviso) => (
