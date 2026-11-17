@@ -3,7 +3,7 @@ function Situacao({ valor }) {
   const etiquetas = {
     procurando: { classe: 'procurando', texto: 'Procurando', simbolo: '?' },
     'aguardando retirada': { classe: 'retirada', texto: 'Aguardando retirada', simbolo: '↗' },
-    'para triar': { classe: 'neutra', texto: 'Para triar', simbolo: '?' },
+    'para triar': { classe: 'triagem', texto: 'Para triar', simbolo: '?' },
     devolvido: { classe: 'devolvido', texto: 'Devolvido', simbolo: '✓' },
     triado: { classe: 'neutra', texto: 'Triado', simbolo: '✓' },
     cancelado: { classe: 'cancelado', texto: 'Cancelado', simbolo: '×' },

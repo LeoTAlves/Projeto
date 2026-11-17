@@ -100,23 +100,28 @@ export default function Balcao({ avisoInicial }) {
           : 'Nenhum aviso para os filtros selecionados.'}</p>
       ) : (
         <ul className="lista-avisos lista-balcao">
-          {avisos.map((aviso) => (
-            <li key={aviso.id} data-situacao={aviso.situacao}>
-              <div className="aviso-topo">
-                <span className="aviso-numero">Aviso #{aviso.id}{aviso.origem_achado_id
-                  && ' · Etiqueta de origem #' + aviso.origem_achado_id}</span>
-                <Situacao valor={aviso.situacao === 'aguardando retirada' && aviso.visitante_id == null
-                  ? 'para triar' : aviso.situacao} />
-              </div>
-              <strong>{aviso.descricao}</strong>
-              <span className="aviso-metadados">
-                {[aviso.pavilhao, aviso.categoria, aviso.local_guarda].filter(Boolean).join(' · ')}
-              </span>
-              <button type="button" className="botao-secundario"
-                aria-label={acaoDoAviso(aviso) + ' · aviso #' + aviso.id}
-                onClick={() => setAvisoId(aviso.id)}>{acaoDoAviso(aviso)}</button>
-            </li>
-          ))}
+          {avisos.map((aviso) => {
+            // Um achado sem visitante recebe a mesma situação visual no cartão e no selo.
+            const situacaoVisual = aviso.situacao === 'aguardando retirada' && aviso.visitante_id == null
+              ? 'para triar' : aviso.situacao;
+
+            return (
+              <li key={aviso.id} data-situacao={situacaoVisual}>
+                <div className="aviso-topo">
+                  <span className="aviso-numero">Aviso #{aviso.id}{aviso.origem_achado_id
+                    && ' · Etiqueta de origem #' + aviso.origem_achado_id}</span>
+                  <Situacao valor={situacaoVisual} />
+                </div>
+                <strong>{aviso.descricao}</strong>
+                <span className="aviso-metadados">
+                  {[aviso.pavilhao, aviso.categoria, aviso.local_guarda].filter(Boolean).join(' · ')}
+                </span>
+                <button type="button" className="botao-secundario"
+                  aria-label={acaoDoAviso(aviso) + ' · aviso #' + aviso.id}
+                  onClick={() => setAvisoId(aviso.id)}>{acaoDoAviso(aviso)}</button>
+              </li>
+            );
+          })}
         </ul>
       )}
       {!erro && (pagina > 1 || avisos.length >= 10) && (

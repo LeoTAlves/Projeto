@@ -106,6 +106,7 @@ textarea { resize: vertical; line-height: 1.6; }
 .etiqueta-neutra { background: #f0f2f4; color: #526371; border-color: #dce1e5; }
 .etiqueta-corrigido { background: #f1eaff; color: #573296; border-color: #bba6df; }
 .etiqueta-cancelado { background: #fff0f0; color: #9b293c; border-color: #dba1a9; }
+.etiqueta-triagem { background: #fbe9f8; color: #70115d; border-color: #b052a3; }
 .legenda-situacoes { display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 0 0 1.5rem; }
 .legenda-situacoes .etiqueta { font-size: 0.68rem; }
 .situacao-atual, .tipo-ocorrencia { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 1rem; border: 1px solid var(--borda); background: #f8faf9; border-radius: 12px; margin: 0; font-size: 0.85rem; }
@@ -326,6 +327,7 @@ textarea { resize: vertical; line-height: 1.6; }
   color: var(--danger); background: rgba(248, 113, 113, .14); border-color: rgba(248, 113, 113, .40);
 }
 [data-tema="escuro"] .etiqueta-neutra { color: var(--text-2); background: var(--surface-2); border-color: var(--border); }
+[data-tema="escuro"] .etiqueta-triagem { color: #ffc5f4; background: #401334; border-color: #d77bc7; }
 [data-tema="escuro"] .mensagem { background-color: var(--surface-2); color: var(--text); border-color: var(--border); }
 [data-tema="escuro"] .erro { color: var(--danger); }
 [data-tema="escuro"] :focus-visible { outline-color: var(--accent); }
@@ -340,6 +342,8 @@ textarea { resize: vertical; line-height: 1.6; }
   --procurando-faixa: #a45300;
   --retirada-fundo: #d6ecff;
   --retirada-faixa: #005cca;
+  --triagem-fundo: #f5d3ef;
+  --triagem-faixa: #a02185;
   --devolvido-fundo: #d1f5df;
   --devolvido-faixa: #007447;
   --encerrado-fundo: #eadcff;
@@ -357,6 +361,8 @@ textarea { resize: vertical; line-height: 1.6; }
   --procurando-faixa: var(--warn);
   --retirada-fundo: #174a93;
   --retirada-faixa: var(--info);
+  --triagem-fundo: #64184f;
+  --triagem-faixa: #ffa1ed;
   --devolvido-fundo: #12573c;
   --devolvido-faixa: var(--ok);
   --encerrado-fundo: #613590;
@@ -397,6 +403,11 @@ body { font-size: 1.0625rem; }
 .lista-ocorrencias > li:has(> .etiqueta-retirada) {
   --fundo-situacao: var(--retirada-fundo);
   --faixa-situacao: var(--retirada-faixa);
+}
+/* O magenta distingue a fila de triagem dos cartões prontos para retirada. */
+[data-situacao="para triar"] {
+  --fundo-situacao: var(--triagem-fundo);
+  --faixa-situacao: var(--triagem-faixa);
 }
 [data-situacao="devolvido"],
 .lista-ocorrencias > li:has(> .etiqueta-devolvido) {
